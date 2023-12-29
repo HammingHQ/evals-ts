@@ -1,0 +1,36 @@
+{
+  "name": "hamming-sdk",
+  "version": "1.0.0",
+  "description": "SDK for Hamming Evals Framework",
+  "main": "lib/index.cjs",
+  "scripts": {
+    "ts-types": "tsc",
+    "build:dev": "rimraf lib && tsup --watch",
+    "build:prod": "rimraf dist && env NODE_ENV=production tsup",
+    "lint:fix": "eslint ./src --ext .ts,.tsx --quiet --fix --ignore-path ./.gitignore",
+    "lint:format": "prettier  --loglevel warn --write \"./**/*.{ts,tsx,css,md,json}\" ",
+    "lint": "npm run lint:format && npm run lint:fix "
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HammingHQ/evals-ts.git"
+  },
+  "keywords": [
+    "llm",
+    "evals"
+  ],
+  "author": "Marius Buleandra",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HammingHQ/evals-ts/issues"
+  },
+  "homepage": "https://github.com/HammingHQ/evals-ts#readme",
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    "rimraf": "^5.0.5",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  }
+}
