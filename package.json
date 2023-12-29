@@ -2,9 +2,9 @@
   "name": "hamming-sdk",
   "version": "1.0.0",
   "description": "SDK for Hamming Evals Framework",
-  "main": "lib/index.cjs",
-  "module": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
     "ts-types": "tsc",
