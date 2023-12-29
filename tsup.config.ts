@@ -13,7 +13,7 @@ export const tsup: Options = {
   entryPoints: ["src/index.ts"],
   dts: true,
   minify: isProd,
-  target: "es2021",
+  target: "es2020",
   outDir: isProd ? "dist" : "lib",
   watch: isDev,
   entry: ["src/**/*.ts"],
