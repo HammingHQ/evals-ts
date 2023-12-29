@@ -1,0 +1,1 @@
+{"version":3,"sources":["../src/index.ts"],"names":["sum","a","b"],"mappings":"AAAA,IAAMA,EAAM,CAACC,EAAWC,IAAcD,EAAIC","sourcesContent":["const sum = (a: number, b: number) => a + b;\n\nexport { sum };\n"]}
