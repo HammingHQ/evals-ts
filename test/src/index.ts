@@ -23,7 +23,10 @@ async function run() {
   console.log("Experiment started..", experiment.id);
 
   for (const dataItem of dataset.items) {
-    const experimentItem = hamming.experiments.items.start(experiment, dataItem);
+    const experimentItem = hamming.experiments.items.start(
+      experiment,
+      dataItem,
+    );
     console.log(`Started item ${dataItem.id}..`);
 
     const input = dataItem.input.query;

@@ -1,5 +1,3 @@
-declare const sum: (a: number, b: number) => number;
-
 declare enum ExperimentStatus {
     CREATED = "CREATED",
     RUNNING = "RUNNING",
@@ -83,4 +81,4 @@ declare class Hamming extends HttpClient {
     datasets: Datasets;
 }
 
-export { type ClientOptions, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, Hamming, type InputType, type MetadataType, type OutputType, sum };
+export { type ClientOptions, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, Hamming, type InputType, type MetadataType, type OutputType };

@@ -1,12 +1,11 @@
 export enum ExperimentStatus {
-  CREATED = 'CREATED',
-  RUNNING = 'RUNNING',
-  SCORING = 'SCORING',
-  SCORING_FAILED = 'SCORING_FAILED',
-  FINISHED = 'FINISHED',
-  FAILED = 'FAILED',
+  CREATED = "CREATED",
+  RUNNING = "RUNNING",
+  SCORING = "SCORING",
+  SCORING_FAILED = "SCORING_FAILED",
+  FINISHED = "FINISHED",
+  FAILED = "FAILED",
 }
-
 
 export interface ClientOptions {
   apiKey: string;
@@ -86,7 +85,7 @@ class ExperimentItems {
     ctx.item.metrics.durationMs = durationMs;
     ctx.item.output = output;
     await this.client.fetch(`/experiments/${ctx.experiment.id}/items`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(ctx.item),
     });
   }
@@ -104,8 +103,8 @@ class Experiments {
 
   async start(name: string, dataset: number): Promise<Experiment> {
     const status = ExperimentStatus.RUNNING;
-    const resp = await this.client.fetch('/experiments', {
-      method: 'POST',
+    const resp = await this.client.fetch("/experiments", {
+      method: "POST",
       body: JSON.stringify({
         name,
         dataset,
@@ -118,10 +117,10 @@ class Experiments {
 
   async end(
     experiment: Experiment,
-    status: ExperimentStatus = ExperimentStatus.FINISHED
+    status: ExperimentStatus = ExperimentStatus.FINISHED,
   ) {
     await this.client.fetch(`/experiments/${experiment.id}`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify({
         status,
       }),
@@ -159,7 +158,7 @@ class HttpClient {
 
   private sanitize_base_url(baseURL: string): string {
     baseURL = baseURL.trim();
-    if (baseURL.endsWith('/')) {
+    if (baseURL.endsWith("/")) {
       return baseURL.slice(0, -1);
     }
     return baseURL;
@@ -170,8 +169,8 @@ class HttpClient {
       ...init,
       headers: {
         ...init?.headers,
-        'authorization': `Bearer ${this.apiKey}`,
-        'content-type': 'application/json',
+        authorization: `Bearer ${this.apiKey}`,
+        "content-type": "application/json",
       },
     });
   }
