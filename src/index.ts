@@ -127,7 +127,7 @@ class Experiments {
   private async start(
     name: string,
     dataset: number,
-    score: ScoreType[]
+    score: ScoreType[],
   ): Promise<Experiment> {
     const status = ExperimentStatus.RUNNING;
     const resp = await this.client.fetch("/experiments", {
@@ -181,9 +181,7 @@ export enum ScoreType {
   "string_diff" = "string_diff",
 }
 
-export const DefaultScoreTypes = [
-  ScoreType.string_diff,
-];
+export const DefaultScoreTypes = [ScoreType.string_diff];
 
 class Datasets {
   private client: Hamming;
