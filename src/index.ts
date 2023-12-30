@@ -80,7 +80,7 @@ class ExperimentItems {
     };
   }
 
-  async end(ctx: ExperimentItemContext, output: OutputType = {}) {
+  async end(ctx: ExperimentItemContext, output: OutputType) {
     const durationMs = Date.now() - ctx.startTs;
     ctx.item.metrics.durationMs = durationMs;
     ctx.item.output = output;
@@ -93,15 +93,42 @@ class ExperimentItems {
 
 class Experiments {
   private client: Hamming;
-
-  items: ExperimentItems;
+  private items: ExperimentItems;
 
   constructor(client: Hamming) {
     this.client = client;
     this.items = new ExperimentItems(this.client);
   }
 
-  async start(name: string, dataset: number): Promise<Experiment> {
+  async run(opts: ExperimentRunOptions, run: ExperimentRunner) {
+    const { dataset: datasetId } = opts;
+    const dataset = await this.client.datasets.load(datasetId);
+
+    const {
+      name = this.generateName(dataset.name),
+      score = DefaultScoreTypes,
+    } = opts;
+
+    const experiment = await this.start(name, datasetId, score);
+    try {
+      for (const datasetItem of dataset.items) {
+        const itemCtx = this.items.start(experiment, datasetItem);
+        const output = await run(datasetItem.input);
+        await this.items.end(itemCtx, output);
+      }
+    } catch (err) {
+      await this.end(experiment, ExperimentStatus.FAILED);
+      throw err;
+    } finally {
+      await this.end(experiment);
+    }
+  }
+
+  private async start(
+    name: string,
+    dataset: number,
+    score: ScoreType[]
+  ): Promise<Experiment> {
     const status = ExperimentStatus.RUNNING;
     const resp = await this.client.fetch("/experiments", {
       method: "POST",
@@ -109,13 +136,14 @@ class Experiments {
         name,
         dataset,
         status,
+        score,
       }),
     });
     const data = await resp.json();
     return data.experiment as Experiment;
   }
 
-  async end(
+  private async end(
     experiment: Experiment,
     status: ExperimentStatus = ExperimentStatus.FINISHED,
   ) {
@@ -126,7 +154,36 @@ class Experiments {
       }),
     });
   }
+
+  private generateName(datasetName: string): string {
+    const now = new Date();
+    return `Experiment for ${datasetName} - ${now.toLocaleString()}`;
+  }
 }
+
+export type DatasetId = number;
+
+interface ExperimentRunOptions {
+  dataset: DatasetId;
+  name?: string;
+  score?: ScoreType[];
+}
+
+export type ExperimentRunner = (input: InputType) => Promise<OutputType>;
+
+export enum ScoreType {
+  "accuracy_ai" = "accuracy_ai",
+  "accuracy_human" = "accuracy_human",
+  "facts_compare" = "facts_compare",
+  "context_recall" = "context_recall",
+  "context_precision" = "context_precision",
+  "hallucination" = "hallucination",
+  "string_diff" = "string_diff",
+}
+
+export const DefaultScoreTypes = [
+  ScoreType.string_diff,
+];
 
 class Datasets {
   private client: Hamming;
@@ -135,7 +192,7 @@ class Datasets {
     this.client = client;
   }
 
-  async load(id: number): Promise<Dataset> {
+  async load(id: DatasetId): Promise<Dataset> {
     const resp = await this.client.fetch(`/datasets/${id}`);
     const data = await resp.json();
     return data.dataset as Dataset;
