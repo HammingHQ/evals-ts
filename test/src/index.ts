@@ -18,39 +18,42 @@ async function run() {
   const dataset = await hamming.datasets.create({
     name: "test dataset",
     items: [
-      { 
-        input: { query: "Sam" }, 
+      {
+        input: { query: "Sam" },
         output: { response: "Hi Sam" },
         metadata: {},
       },
-      { 
-        input: { query: "Ela" }, 
+      {
+        input: { query: "Ela" },
         output: { response: "Hi Ela" },
         metadata: {},
       },
-      { 
-        input: { query: "Joe" }, 
+      {
+        input: { query: "Joe" },
         output: { response: "Hello Joe" },
         metadata: {},
       },
     ],
   });
-  
-  hamming.experiments.run({
-    name: "test experiment",
-    dataset: dataset.id,
-  }, async ({ query }) => {
-    console.log(`Query: ${query}`);
 
-    // Do meaningful work..
-    const sleepMs = Math.random() * 1000;
-    await new Promise((resolve) => setTimeout(resolve, sleepMs));
+  hamming.experiments.run(
+    {
+      name: "test experiment",
+      dataset: dataset.id,
+    },
+    async ({ query }) => {
+      console.log(`Query: ${query}`);
 
-    const response = `Hi ${query}`;
-    console.log(`Response: ${response}`);
+      // Do meaningful work..
+      const sleepMs = Math.random() * 1000;
+      await new Promise((resolve) => setTimeout(resolve, sleepMs));
 
-    return { response };
-  });
+      const response = `Hi ${query}`;
+      console.log(`Response: ${response}`);
+
+      return { response };
+    },
+  );
 }
 
 run().catch((err) => {
