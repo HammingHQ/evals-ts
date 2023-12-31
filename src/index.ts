@@ -37,16 +37,17 @@ export interface ExperimentItemContext {
   startTs: number;
 }
 
-export type InputType = Record<string, any>;
-export type OutputType = Record<string, any>;
+export type InputType = { query: string } & Record<string, any>;
+export type OutputType = { response: string } & Record<string, any>;
 export type MetadataType = Record<string, any>;
 
-interface DatasetItem {
-  id: number;
+export interface DatasetItemValue {
   input: InputType;
   output: OutputType;
   metadata: MetadataType;
 }
+
+type DatasetItem = DatasetItemValue & { id: number };
 
 interface Dataset {
   id: number;
@@ -71,7 +72,9 @@ class ExperimentItems {
       experiment,
       item: {
         datasetItemId: datasetItem.id,
-        output: {},
+        output: {
+          response: "",
+        },
         metrics: {
           durationMs: 0,
         },
@@ -100,7 +103,7 @@ class Experiments {
     this.items = new ExperimentItems(this.client);
   }
 
-  async run(opts: ExperimentRunOptions, run: ExperimentRunner) {
+  async run(opts: RunOptions, run: Runner) {
     const { dataset: datasetId } = opts;
     const dataset = await this.client.datasets.load(datasetId);
 
@@ -163,13 +166,13 @@ class Experiments {
 
 export type DatasetId = number;
 
-interface ExperimentRunOptions {
+interface RunOptions {
   dataset: DatasetId;
   name?: string;
   score?: ScoreType[];
 }
 
-export type ExperimentRunner = (input: InputType) => Promise<OutputType>;
+export type Runner = (input: InputType) => Promise<OutputType>;
 
 export enum ScoreType {
   "accuracy_ai" = "accuracy_ai",
@@ -195,6 +198,26 @@ class Datasets {
     const data = await resp.json();
     return data.dataset as Dataset;
   }
+
+  async create(opts: CreateDatasetOptions): Promise<Dataset> {
+    const { name, description, items } = opts;
+    const resp = await this.client.fetch("/datasets", {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        description,
+        items,
+      }),
+    });
+    const data = await resp.json();
+    return data.dataset as Dataset;
+  }
+}
+
+export interface CreateDatasetOptions {
+  name: string;
+  description?: string;
+  items: DatasetItemValue[];
 }
 
 class HttpClientOptions {

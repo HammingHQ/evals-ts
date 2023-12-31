@@ -31,38 +31,63 @@ interface ExperimentItemContext {
     item: ExperimentItem;
     startTs: number;
 }
-type InputType = Record<string, any>;
-type OutputType = Record<string, any>;
+type InputType = {
+    query: string;
+} & Record<string, any>;
+type OutputType = {
+    response: string;
+} & Record<string, any>;
 type MetadataType = Record<string, any>;
-interface DatasetItem {
-    id: number;
+interface DatasetItemValue {
     input: InputType;
     output: OutputType;
     metadata: MetadataType;
 }
+type DatasetItem = DatasetItemValue & {
+    id: number;
+};
 interface Dataset {
     id: number;
     name: string;
     description?: string;
     items: DatasetItem[];
 }
-declare class ExperimentItems {
-    private client;
-    constructor(client: Hamming);
-    start(experiment: Experiment, datasetItem: DatasetItem): ExperimentItemContext;
-    end(ctx: ExperimentItemContext, output?: OutputType): Promise<void>;
-}
 declare class Experiments {
     private client;
-    items: ExperimentItems;
+    private items;
     constructor(client: Hamming);
-    start(name: string, dataset: number): Promise<Experiment>;
-    end(experiment: Experiment, status?: ExperimentStatus): Promise<void>;
+    run(opts: RunOptions, run: Runner): Promise<void>;
+    private start;
+    private end;
+    private generateName;
 }
+type DatasetId = number;
+interface RunOptions {
+    dataset: DatasetId;
+    name?: string;
+    score?: ScoreType[];
+}
+type Runner = (input: InputType) => Promise<OutputType>;
+declare enum ScoreType {
+    "accuracy_ai" = "accuracy_ai",
+    "accuracy_human" = "accuracy_human",
+    "facts_compare" = "facts_compare",
+    "context_recall" = "context_recall",
+    "context_precision" = "context_precision",
+    "hallucination" = "hallucination",
+    "string_diff" = "string_diff"
+}
+declare const DefaultScoreTypes: ScoreType[];
 declare class Datasets {
     private client;
     constructor(client: Hamming);
-    load(id: number): Promise<Dataset>;
+    load(id: DatasetId): Promise<Dataset>;
+    create(opts: CreateDatasetOptions): Promise<Dataset>;
+}
+interface CreateDatasetOptions {
+    name: string;
+    description?: string;
+    items: DatasetItemValue[];
 }
 declare class HttpClientOptions {
     apiKey: string;
@@ -81,4 +106,4 @@ declare class Hamming extends HttpClient {
     datasets: Datasets;
 }
 
-export { type ClientOptions, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, Hamming, type InputType, type MetadataType, type OutputType };
+export { type ClientOptions, type CreateDatasetOptions, type DatasetId, type DatasetItemValue, DefaultScoreTypes, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, Hamming, type InputType, type MetadataType, type OutputType, type Runner, ScoreType };
