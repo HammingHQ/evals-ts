@@ -19,15 +19,16 @@ interface Experiment {
     status: ExperimentStatus;
 }
 interface ExperimentItemMetrics {
-    durationMs: number;
+    durationMs?: number;
 }
 interface ExperimentItem {
+    id: number;
+    experimentId: number;
     datasetItemId: number;
     output: OutputType;
     metrics: ExperimentItemMetrics;
 }
 interface ExperimentItemContext {
-    experiment: Experiment;
     item: ExperimentItem;
     startTs: number;
 }
@@ -35,7 +36,7 @@ type InputType = {
     query: string;
 } & Record<string, any>;
 type OutputType = {
-    response: string;
+    response?: string;
 } & Record<string, any>;
 type MetadataType = Record<string, any>;
 interface DatasetItemValue {
@@ -65,17 +66,17 @@ type DatasetId = number;
 interface RunOptions {
     dataset: DatasetId;
     name?: string;
-    score?: ScoreType[];
+    scoring?: ScoreType[];
 }
 type Runner = (input: InputType) => Promise<OutputType>;
 declare enum ScoreType {
-    "accuracy_ai" = "accuracy_ai",
-    "accuracy_human" = "accuracy_human",
-    "facts_compare" = "facts_compare",
-    "context_recall" = "context_recall",
-    "context_precision" = "context_precision",
-    "hallucination" = "hallucination",
-    "string_diff" = "string_diff"
+    AccuracyAI = "accuracy_ai",
+    AccuracyHuman = "accuracy_human",
+    FactsCompare = "facts_compare",
+    ContextRecall = "context_recall",
+    ContextPrecision = "context_precision",
+    Hallucination = "hallucination",
+    StringDiff = "string_diff"
 }
 declare const DefaultScoreTypes: ScoreType[];
 declare class Datasets {
@@ -100,10 +101,38 @@ declare class HttpClient {
     private sanitize_base_url;
     fetch(input: string, init?: RequestInit | undefined): Promise<Response>;
 }
+type TraceEvent = Record<string, unknown>;
+interface LLMEventParams {
+    input?: string;
+    output?: string;
+    metadata?: {
+        model?: string;
+    };
+}
+interface VectorSearchEventParams {
+    query?: string;
+    results?: string[];
+    metadata?: {
+        engine?: string;
+    };
+}
+declare class Tracing {
+    private client;
+    private collected;
+    private currentLocalTraceId;
+    constructor(client: Hamming);
+    private nextTraceId;
+    _flush(experimentItemId: number): Promise<void>;
+    LLMEvent(params: LLMEventParams): TraceEvent;
+    VectorSearchEvent(params: VectorSearchEventParams): TraceEvent;
+    log(key: string, value: unknown): void;
+    log(trace: TraceEvent): void;
+}
 declare class Hamming extends HttpClient {
     constructor(config: ClientOptions);
     experiments: Experiments;
     datasets: Datasets;
+    tracing: Tracing;
 }
 
 export { type ClientOptions, type CreateDatasetOptions, type DatasetId, type DatasetItemValue, DefaultScoreTypes, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, Hamming, type InputType, type MetadataType, type OutputType, type Runner, ScoreType };

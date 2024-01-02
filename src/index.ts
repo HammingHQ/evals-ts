@@ -22,23 +22,24 @@ export interface Experiment {
 }
 
 export interface ExperimentItemMetrics {
-  durationMs: number;
+  durationMs?: number;
 }
 
 export interface ExperimentItem {
+  id: number;
+  experimentId: number;
   datasetItemId: number;
   output: OutputType;
   metrics: ExperimentItemMetrics;
 }
 
 export interface ExperimentItemContext {
-  experiment: Experiment;
   item: ExperimentItem;
   startTs: number;
 }
 
 export type InputType = { query: string } & Record<string, any>;
-export type OutputType = { response: string } & Record<string, any>;
+export type OutputType = { response?: string } & Record<string, any>;
 export type MetadataType = Record<string, any>;
 
 export interface DatasetItemValue {
@@ -63,34 +64,41 @@ class ExperimentItems {
     this.client = client;
   }
 
-  start(
+  async start(
     experiment: Experiment,
     datasetItem: DatasetItem,
-  ): ExperimentItemContext {
+  ): Promise<ExperimentItemContext> {
+    const resp = await this.client.fetch(`/experiments/${experiment.id}/items`, {
+      method: "POST",
+      body: JSON.stringify({
+        datasetItemId: datasetItem.id,
+        output: {},
+        metrics: {},
+      }),
+    });
+    const data = await resp.json();
+    const item = data.item as ExperimentItem;
+
     const startTs = Date.now();
     return {
-      experiment,
-      item: {
-        datasetItemId: datasetItem.id,
-        output: {
-          response: "",
-        },
-        metrics: {
-          durationMs: 0,
-        },
-      },
+      item,
       startTs,
     };
   }
 
-  async end(ctx: ExperimentItemContext, output: OutputType) {
-    const durationMs = Date.now() - ctx.startTs;
-    ctx.item.metrics.durationMs = durationMs;
-    ctx.item.output = output;
-    await this.client.fetch(`/experiments/${ctx.experiment.id}/items`, {
-      method: "POST",
-      body: JSON.stringify(ctx.item),
+  async end(itemContext: ExperimentItemContext, output: OutputType) {
+    const { item, startTs } = itemContext;
+    const durationMs = Date.now() - startTs;
+    await this.client.fetch(`/experiments/${item.experimentId}/items/${item.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        output,
+        metrics: {
+          durationMs,
+        },
+      }),
     });
+    await this.client.tracing._flush(item.id);
   }
 }
 
@@ -109,15 +117,15 @@ class Experiments {
 
     const {
       name = this.generateName(dataset.name),
-      score = DefaultScoreTypes,
+      scoring = DefaultScoreTypes,
     } = opts;
 
-    const experiment = await this.start(name, datasetId, score);
+    const experiment = await this.start(name, datasetId, scoring);
     try {
       for (const datasetItem of dataset.items) {
-        const itemCtx = this.items.start(experiment, datasetItem);
+        const itemContext = await this.items.start(experiment, datasetItem);
         const output = await run(datasetItem.input);
-        await this.items.end(itemCtx, output);
+        await this.items.end(itemContext, output);
       }
     } catch (err) {
       await this.end(experiment, ExperimentStatus.FAILED);
@@ -130,7 +138,7 @@ class Experiments {
   private async start(
     name: string,
     dataset: number,
-    score: ScoreType[],
+    scoring: ScoreType[],
   ): Promise<Experiment> {
     const status = ExperimentStatus.RUNNING;
     const resp = await this.client.fetch("/experiments", {
@@ -139,7 +147,7 @@ class Experiments {
         name,
         dataset,
         status,
-        score,
+        scoring,
       }),
     });
     const data = await resp.json();
@@ -169,22 +177,22 @@ export type DatasetId = number;
 interface RunOptions {
   dataset: DatasetId;
   name?: string;
-  score?: ScoreType[];
+  scoring?: ScoreType[];
 }
 
 export type Runner = (input: InputType) => Promise<OutputType>;
 
 export enum ScoreType {
-  "accuracy_ai" = "accuracy_ai",
-  "accuracy_human" = "accuracy_human",
-  "facts_compare" = "facts_compare",
-  "context_recall" = "context_recall",
-  "context_precision" = "context_precision",
-  "hallucination" = "hallucination",
-  "string_diff" = "string_diff",
+  AccuracyAI = "accuracy_ai",
+  AccuracyHuman = "accuracy_human",
+  FactsCompare = "facts_compare",
+  ContextRecall = "context_recall",
+  ContextPrecision = "context_precision",
+  Hallucination = "hallucination",
+  StringDiff = "string_diff",
 }
 
-export const DefaultScoreTypes = [ScoreType.string_diff];
+export const DefaultScoreTypes = [ScoreType.StringDiff];
 
 class Datasets {
   private client: Hamming;
@@ -254,6 +262,98 @@ class HttpClient {
   }
 }
 
+type TraceEvent = Record<string, unknown>;
+
+interface LLMEventParams {
+  input?: string;
+  output?: string;
+  metadata?: {
+    model?: string;
+  }
+}
+
+interface VectorSearchEventParams {
+  query?: string;
+  results?: string[];
+  metadata?: {
+    engine?: string;
+  }
+}
+
+interface Trace {
+  id: number;
+  experimentItemId: number;
+  parentId?: number;
+  event: TraceEvent;
+}
+
+class Tracing {
+  private client: Hamming;
+  private collected: TraceEvent[] = [];
+  private currentLocalTraceId: number = 0;
+
+  constructor(client: Hamming) {
+    this.client = client;
+  }
+
+  private nextTraceId(): number {
+    return this.currentLocalTraceId++;
+  }
+
+  async _flush(experimentItemId: number) {
+    const events = this.collected;
+    this.collected = [];
+    
+    const rootTrace: Trace = {
+      id: this.nextTraceId(),
+      experimentItemId,
+      event: { kind: "root" },
+    };
+
+    const traces: Trace[] = [rootTrace];
+
+    for (const event of events) {
+      traces.push({
+        id: this.nextTraceId(),
+        experimentItemId,
+        parentId: rootTrace.id,
+        event,
+      });
+    }
+
+    await this.client.fetch(`/traces`, {
+      method: "POST",
+      body: JSON.stringify({
+        traces,
+      }),
+    });
+  }
+
+  LLMEvent(params: LLMEventParams): TraceEvent {
+    return {
+      kind: "llm", 
+      ...params 
+    };
+  }
+
+  VectorSearchEvent(params: VectorSearchEventParams): TraceEvent {
+    return { 
+      kind: "vector", 
+      ...params 
+    };
+  }
+
+  log(key: string, value: unknown): void;
+  log(trace: TraceEvent): void;
+  log(keyOrTrace: string | TraceEvent, value?: unknown): void {
+    if (typeof keyOrTrace === "string") {
+      this.collected.push({ [keyOrTrace]: value });
+    } else {
+      this.collected.push(keyOrTrace);
+    }
+  }
+}
+
 export class Hamming extends HttpClient {
   constructor(config: ClientOptions) {
     super({
@@ -264,4 +364,5 @@ export class Hamming extends HttpClient {
 
   experiments = new Experiments(this);
   datasets = new Datasets(this);
+  tracing = new Tracing(this);
 }
