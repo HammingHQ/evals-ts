@@ -9,6 +9,7 @@ declare enum ExperimentStatus {
 interface ClientOptions {
     apiKey: string;
     baseURL: string;
+    verbose?: boolean;
 }
 interface Experiment {
     id: number;
@@ -53,6 +54,11 @@ interface Dataset {
     description?: string;
     items: DatasetItem[];
 }
+interface DatasetLite {
+    id: number;
+    name: string;
+    description?: string;
+}
 declare class Experiments {
     private client;
     private items;
@@ -83,6 +89,7 @@ declare class Datasets {
     private client;
     constructor(client: Hamming);
     load(id: DatasetId): Promise<Dataset>;
+    list(): Promise<DatasetLite[]>;
     create(opts: CreateDatasetOptions): Promise<Dataset>;
 }
 interface CreateDatasetOptions {
@@ -90,14 +97,11 @@ interface CreateDatasetOptions {
     description?: string;
     items: DatasetItemValue[];
 }
-declare class HttpClientOptions {
-    apiKey: string;
-    baseURL: string;
-}
 declare class HttpClient {
     apiKey: string;
     baseURL: string;
-    constructor(opts: HttpClientOptions);
+    verbose: boolean;
+    constructor(opts: ClientOptions);
     private sanitize_base_url;
     fetch(input: string, init?: RequestInit | undefined): Promise<Response>;
 }
@@ -109,9 +113,13 @@ interface LLMEventParams {
         model?: string;
     };
 }
+interface Document {
+    pageContent: string;
+    metadata: Record<string, any>;
+}
 interface VectorSearchEventParams {
     query?: string;
-    results?: string[];
+    results?: Document[] | string[];
     metadata?: {
         engine?: string;
     };

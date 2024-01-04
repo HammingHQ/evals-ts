@@ -1,10 +1,9 @@
 import { envsafe, str } from "envsafe";
 import { Hamming, ScoreType } from "hamming-sdk";
-
 import dotenv from "dotenv";
-dotenv.config();
+// import { createLargeDataset } from "./dataset";
 
-import { createLargeDataset } from "./dataset";
+dotenv.config();
 
 export const env = envsafe({
   HAMMING_API_KEY: str(),
@@ -18,7 +17,78 @@ const hamming = new Hamming({
 
 const trace = hamming.tracing;
 
-async function runExperiment() {
+async function doForaRag(question: string) {
+  const translatedQuestion = `Standalone question: ${question}`;
+
+  trace.log(
+    trace.LLMEvent({
+      input: question,
+      output: translatedQuestion,
+      metadata: {
+        model: "GPT 3.5 Turbo",
+      },
+    })
+  );
+
+  //This is a common structure
+  const retrievedDocs = [
+    {
+      pageContent: "This is a sample page document",
+      metadata: {
+        type: "Forums",
+        url: "some URL",
+      },
+    },
+    {
+      pageContent: "This is a sample page document from advisor pages",
+      metadata: {
+        type: "Advisor",
+        url: "some URL",
+      },
+    },
+  ];
+
+  trace.log(
+    trace.VectorSearchEvent({
+      query: translatedQuestion,
+      results: retrievedDocs,
+      metadata: {
+        engine: "pinecone",
+      },
+    })
+  );
+
+  const finalAnswer = {
+    response: "This is my final answer; this could be streamed or not",
+    source: retrievedDocs.map((d) => d.metadata),
+  };
+
+  // Do meaningful work..
+  const sleepMs = Math.random() * 1000;
+  await new Promise((resolve) => setTimeout(resolve, sleepMs));
+
+  return finalAnswer;
+}
+
+async function foraExample() {
+  const datasetId = 1;
+
+  await hamming.experiments.run(
+    {
+      name: "test experiment #2",
+      dataset: datasetId,
+      scoring: [ScoreType.StringDiff],
+    },
+    async ({ query }) => {
+      console.log(`Query: ${query}`);
+      const output = await doForaRag(query);
+      const response = output.response;
+      return { response };
+    }
+  );
+}
+
+async function createDataset() {
   const dataset = await hamming.datasets.create({
     name: "test dataset",
     items: [
@@ -40,6 +110,15 @@ async function runExperiment() {
     ],
   });
 
+  return dataset;
+}
+
+async function runExperiment() {
+  const datasets = await hamming.datasets.list();
+  console.log("🚀 ~ file: index.ts:24 ~ runExperiment ~ datasets:", datasets);
+
+  const dataset = await createDataset();
+
   hamming.experiments.run(
     {
       name: "test experiment",
@@ -49,47 +128,52 @@ async function runExperiment() {
     async ({ query }) => {
       console.log(`Query: ${query}`);
 
-      trace.log('single_key', 1234);
-      
+      trace.log("single_key", 1234);
+
       trace.log({
-        "key1": "value1",
-        "key2": "value2",
+        key1: "value1",
+        key2: "value2",
       });
 
       // Do meaningful work..
       const sleepMs = Math.random() * 1000;
       await new Promise((resolve) => setTimeout(resolve, sleepMs));
 
-      trace.log(trace.VectorSearchEvent({
-        query: "How many people live in New York?",
-        results: [
-          "The population of New York is 8 million",
-          "New York is the largest city in the US",
-        ],
-        metadata: {
-          "engine": "pinecone",
-        },
-      }));
+      trace.log(
+        trace.VectorSearchEvent({
+          query: "How many people live in New York?",
+          results: [
+            "The population of New York is 8 million",
+            "New York is the largest city in the US",
+          ],
+          metadata: {
+            engine: "pinecone",
+          },
+        })
+      );
 
-      trace.log(trace.LLMEvent({
-        input: "How many people live in New York?",
-        output: "8 million",
-        metadata: {
-          "model": "t5-base",
-        },
-      }));
+      trace.log(
+        trace.LLMEvent({
+          input: "How many people live in New York?",
+          output: "8 million",
+          metadata: {
+            model: "t5-base",
+          },
+        })
+      );
 
       const response = `Hi ${query}`;
       console.log(`Response: ${response}`);
 
       return { response };
-    },
+    }
   );
 }
 
 async function run() {
   // await createLargeDataset(hamming, 1000);
-  await runExperiment();
+  // await runExperiment();
+  await foraExample();
 }
 
 run().catch((err) => {

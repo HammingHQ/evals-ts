@@ -25,21 +25,50 @@ function randomMultipleChoice<T>(arr: T[], count: number): T[] {
 }
 
 const categories = ["Puzzle", "Scientific", "Trivia", "Vocabulary", "Legal"];
-const labels = ["creative", "long form", "short form", "funny", "serious", "educational", "inspiring", "scary", "informative", "entertaining", "thought provoking", "controversial", "political", "satirical", "emotional"];
-const originalAuthors = ["Sam Cook", "Fred Bernstein", "Carry Grant", "Serge Effin"];
+const labels = [
+  "creative",
+  "long form",
+  "short form",
+  "funny",
+  "serious",
+  "educational",
+  "inspiring",
+  "scary",
+  "informative",
+  "entertaining",
+  "thought provoking",
+  "controversial",
+  "political",
+  "satirical",
+  "emotional",
+];
+const originalAuthors = [
+  "Sam Cook",
+  "Fred Bernstein",
+  "Carry Grant",
+  "Serge Effin",
+];
 const topLibraries = ["React", "Vue", "Angular", "Ember", "Svelte"];
 
 function generateRandomMetadata(): Metadata {
   const fullMetadata: Metadata = {
     [MetadataKey.Category]: randomChoice(categories),
     [MetadataKey.Ranking]: Math.floor(Math.random() * 100),
-    [MetadataKey.Labels]: randomMultipleChoice(labels, Math.floor(Math.random() * 5)),
+    [MetadataKey.Labels]: randomMultipleChoice(
+      labels,
+      Math.floor(Math.random() * 5)
+    ),
     [MetadataKey.RiskLevel]: Math.random() > 0.5 ? "low" : "high",
     [MetadataKey.Rarity]: Math.random(),
     [MetadataKey.OriginalAuthor]: randomChoice(originalAuthors),
-    [MetadataKey.TopLibraries]: randomMultipleChoice(topLibraries, Math.floor(Math.random() * 3))
+    [MetadataKey.TopLibraries]: randomMultipleChoice(
+      topLibraries,
+      Math.floor(Math.random() * 3)
+    ),
   };
-  const keepMetadataKey = Array.from(Object.keys(fullMetadata)).filter(() => Math.random() > 0.5);
+  const keepMetadataKey = Array.from(Object.keys(fullMetadata)).filter(
+    () => Math.random() > 0.5
+  );
   const metadata: Metadata = {};
   for (const key of keepMetadataKey) {
     metadata[key] = fullMetadata[key];

@@ -10,6 +10,7 @@ export enum ExperimentStatus {
 export interface ClientOptions {
   apiKey: string;
   baseURL: string;
+  verbose?: boolean;
 }
 
 export interface Experiment {
@@ -57,6 +58,12 @@ interface Dataset {
   items: DatasetItem[];
 }
 
+interface DatasetLite {
+  id: number;
+  name: string;
+  description?: string;
+}
+
 class ExperimentItems {
   private client: Hamming;
 
@@ -66,16 +73,19 @@ class ExperimentItems {
 
   async start(
     experiment: Experiment,
-    datasetItem: DatasetItem,
+    datasetItem: DatasetItem
   ): Promise<ExperimentItemContext> {
-    const resp = await this.client.fetch(`/experiments/${experiment.id}/items`, {
-      method: "POST",
-      body: JSON.stringify({
-        datasetItemId: datasetItem.id,
-        output: {},
-        metrics: {},
-      }),
-    });
+    const resp = await this.client.fetch(
+      `/experiments/${experiment.id}/items`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          datasetItemId: datasetItem.id,
+          output: {},
+          metrics: {},
+        }),
+      }
+    );
     const data = await resp.json();
     const item = data.item as ExperimentItem;
 
@@ -89,15 +99,18 @@ class ExperimentItems {
   async end(itemContext: ExperimentItemContext, output: OutputType) {
     const { item, startTs } = itemContext;
     const durationMs = Date.now() - startTs;
-    await this.client.fetch(`/experiments/${item.experimentId}/items/${item.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        output,
-        metrics: {
-          durationMs,
-        },
-      }),
-    });
+    await this.client.fetch(
+      `/experiments/${item.experimentId}/items/${item.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          output,
+          metrics: {
+            durationMs,
+          },
+        }),
+      }
+    );
     await this.client.tracing._flush(item.id);
   }
 }
@@ -138,7 +151,7 @@ class Experiments {
   private async start(
     name: string,
     dataset: number,
-    scoring: ScoreType[],
+    scoring: ScoreType[]
   ): Promise<Experiment> {
     const status = ExperimentStatus.RUNNING;
     const resp = await this.client.fetch("/experiments", {
@@ -156,7 +169,7 @@ class Experiments {
 
   private async end(
     experiment: Experiment,
-    status: ExperimentStatus = ExperimentStatus.FINISHED,
+    status: ExperimentStatus = ExperimentStatus.FINISHED
   ) {
     await this.client.fetch(`/experiments/${experiment.id}`, {
       method: "PATCH",
@@ -207,6 +220,12 @@ class Datasets {
     return data.dataset as Dataset;
   }
 
+  async list(): Promise<DatasetLite[]> {
+    const resp = await this.client.fetch(`/datasets`);
+    const data = await resp.json();
+    return data.datasets as DatasetLite[];
+  }
+
   async create(opts: CreateDatasetOptions): Promise<Dataset> {
     const { name, description, items } = opts;
     const resp = await this.client.fetch("/datasets", {
@@ -228,18 +247,15 @@ export interface CreateDatasetOptions {
   items: DatasetItemValue[];
 }
 
-class HttpClientOptions {
-  apiKey: string;
-  baseURL: string;
-}
-
 class HttpClient {
   apiKey: string;
   baseURL: string;
+  verbose: boolean;
 
-  constructor(opts: HttpClientOptions) {
+  constructor(opts: ClientOptions) {
     this.apiKey = opts.apiKey;
     this.baseURL = this.sanitize_base_url(opts.baseURL);
+    this.verbose = opts.verbose ?? false;
   }
 
   private sanitize_base_url(baseURL: string): string {
@@ -269,15 +285,20 @@ interface LLMEventParams {
   output?: string;
   metadata?: {
     model?: string;
-  }
+  };
+}
+
+interface Document {
+  pageContent: string;
+  metadata: Record<string, any>;
 }
 
 interface VectorSearchEventParams {
   query?: string;
-  results?: string[];
+  results?: Document[] | string[];
   metadata?: {
     engine?: string;
-  }
+  };
 }
 
 interface Trace {
@@ -303,7 +324,7 @@ class Tracing {
   async _flush(experimentItemId: number) {
     const events = this.collected;
     this.collected = [];
-    
+
     const rootTrace: Trace = {
       id: this.nextTraceId(),
       experimentItemId,
@@ -331,15 +352,26 @@ class Tracing {
 
   LLMEvent(params: LLMEventParams): TraceEvent {
     return {
-      kind: "llm", 
-      ...params 
+      kind: "llm",
+      ...params,
     };
   }
 
   VectorSearchEvent(params: VectorSearchEventParams): TraceEvent {
-    return { 
-      kind: "vector", 
-      ...params 
+    //Our goal is to normalize normal string elements into the document structure
+    if (
+      Array.isArray(params.results) &&
+      params.results.every((item) => typeof item === "string")
+    ) {
+      params.results = params.results.map((result: any) => ({
+        pageContent: result,
+        metadata: {},
+      }));
+    }
+
+    return {
+      kind: "vector",
+      ...params,
     };
   }
 
@@ -359,6 +391,7 @@ export class Hamming extends HttpClient {
     super({
       apiKey: config.apiKey,
       baseURL: config.baseURL,
+      verbose: config.verbose,
     });
   }
 
