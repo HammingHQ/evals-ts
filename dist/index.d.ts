@@ -9,7 +9,6 @@ declare enum ExperimentStatus {
 interface ClientOptions {
     apiKey: string;
     baseURL: string;
-    verbose?: boolean;
 }
 interface Experiment {
     id: number;
@@ -100,7 +99,6 @@ interface CreateDatasetOptions {
 declare class HttpClient {
     apiKey: string;
     baseURL: string;
-    verbose: boolean;
     constructor(opts: ClientOptions);
     private sanitize_base_url;
     fetch(input: string, init?: RequestInit | undefined): Promise<Response>;
