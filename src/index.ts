@@ -10,7 +10,6 @@ export enum ExperimentStatus {
 export interface ClientOptions {
   apiKey: string;
   baseURL: string;
-  verbose?: boolean;
 }
 
 export interface Experiment {
@@ -250,12 +249,10 @@ export interface CreateDatasetOptions {
 class HttpClient {
   apiKey: string;
   baseURL: string;
-  verbose: boolean;
 
   constructor(opts: ClientOptions) {
     this.apiKey = opts.apiKey;
     this.baseURL = this.sanitize_base_url(opts.baseURL);
-    this.verbose = opts.verbose ?? false;
   }
 
   private sanitize_base_url(baseURL: string): string {
@@ -391,7 +388,6 @@ export class Hamming extends HttpClient {
     super({
       apiKey: config.apiKey,
       baseURL: config.baseURL,
-      verbose: config.verbose,
     });
   }
 
