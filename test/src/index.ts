@@ -4,6 +4,8 @@ import { Hamming, ScoreType } from "hamming-sdk";
 import dotenv from "dotenv";
 dotenv.config();
 
+import { createLargeDataset } from "./dataset";
+
 export const env = envsafe({
   HAMMING_API_KEY: str(),
   HAMMING_BASE_URL: str(),
@@ -16,7 +18,7 @@ const hamming = new Hamming({
 
 const trace = hamming.tracing;
 
-async function run() {
+async function runExperiment() {
   const dataset = await hamming.datasets.create({
     name: "test dataset",
     items: [
@@ -83,6 +85,11 @@ async function run() {
       return { response };
     },
   );
+}
+
+async function run() {
+  // await createLargeDataset(hamming, 1000);
+  await runExperiment();
 }
 
 run().catch((err) => {
