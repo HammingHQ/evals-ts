@@ -55,7 +55,6 @@ interface Dataset {
     id: number;
     name: string;
     description?: string;
-    items: DatasetItem[];
 }
 type DatasetWithItems = Dataset & {
     items: DatasetItem[];
@@ -89,9 +88,9 @@ declare const DefaultScoreTypes: ScoreType[];
 declare class Datasets {
     private client;
     constructor(client: Hamming);
-    load(id: DatasetId): Promise<Dataset>;
-    list(): Promise<DatasetWithItems[]>;
-    create(opts: CreateDatasetOptions): Promise<Dataset>;
+    load(id: DatasetId): Promise<DatasetWithItems>;
+    list(): Promise<Dataset[]>;
+    create(opts: CreateDatasetOptions): Promise<DatasetWithItems>;
 }
 interface CreateDatasetOptions {
     name: string;

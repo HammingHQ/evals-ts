@@ -59,7 +59,6 @@ interface Dataset {
   id: number;
   name: string;
   description?: string;
-  items: DatasetItem[];
 }
 
 type DatasetWithItems = Dataset & { items: DatasetItem[] };
@@ -214,19 +213,19 @@ class Datasets {
     this.client = client;
   }
 
-  async load(id: DatasetId): Promise<Dataset> {
+  async load(id: DatasetId): Promise<DatasetWithItems> {
     const resp = await this.client.fetch(`/datasets/${id}`);
     const data = await resp.json();
-    return data.dataset as Dataset;
+    return data.dataset as DatasetWithItems;
   }
 
-  async list(): Promise<DatasetWithItems[]> {
+  async list(): Promise<Dataset[]> {
     const resp = await this.client.fetch(`/datasets`);
     const data = await resp.json();
-    return data.datasets as DatasetWithItems[];
+    return data.datasets as Dataset[];
   }
 
-  async create(opts: CreateDatasetOptions): Promise<Dataset> {
+  async create(opts: CreateDatasetOptions): Promise<DatasetWithItems> {
     const { name, description, items } = opts;
     const resp = await this.client.fetch("/datasets", {
       method: "POST",
@@ -237,7 +236,7 @@ class Datasets {
       }),
     });
     const data = await resp.json();
-    return data.dataset as Dataset;
+    return data.dataset as DatasetWithItems;
   }
 }
 
@@ -356,19 +355,23 @@ class Tracing {
   }
 
   VectorSearchEvent(params: VectorSearchEventParams): TraceEvent {
-    const normalizedResults = params.results?.every(
-      (item) => typeof item === "string",
-    )
-      ? params.results.map((result: any) => ({
-          pageContent: result,
-          metadata: {},
-        }))
+    const isString = (item: any) => typeof item === "string";
+    const hasStringResults = params.results?.every(isString);
+    const normalizeResult = (result: string | Document): Document => {
+      if (typeof result === "string") {
+        return { pageContent: result, metadata: {} };
+      }
+      return result;
+    };
+
+    const results = hasStringResults
+      ? params.results?.map(normalizeResult)
       : params.results;
 
     return {
       kind: "vector",
       ...params,
-      results: normalizedResults,
+      results,
     };
   }
 
