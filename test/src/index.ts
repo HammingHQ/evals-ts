@@ -17,7 +17,7 @@ const hamming = new Hamming({
 
 const trace = hamming.tracing;
 
-async function doForaRag(question: string) {
+async function doSimpleRag(question: string) {
   const translatedQuestion = `Standalone question: ${question}`;
 
   trace.log(
@@ -27,7 +27,7 @@ async function doForaRag(question: string) {
       metadata: {
         model: "GPT 3.5 Turbo",
       },
-    })
+    }),
   );
 
   //This is a common structure
@@ -55,7 +55,7 @@ async function doForaRag(question: string) {
       metadata: {
         engine: "pinecone",
       },
-    })
+    }),
   );
 
   const finalAnswer = {
@@ -68,24 +68,6 @@ async function doForaRag(question: string) {
   await new Promise((resolve) => setTimeout(resolve, sleepMs));
 
   return finalAnswer;
-}
-
-async function foraExample() {
-  const datasetId = 1;
-
-  await hamming.experiments.run(
-    {
-      name: "test experiment #2",
-      dataset: datasetId,
-      scoring: [ScoreType.StringDiff],
-    },
-    async ({ query }) => {
-      console.log(`Query: ${query}`);
-      const output = await doForaRag(query);
-      const response = output.response;
-      return { response };
-    }
-  );
 }
 
 async function createDataset() {
@@ -113,10 +95,26 @@ async function createDataset() {
   return dataset;
 }
 
+async function simpleRagExample() {
+  const dataset = await createDataset();
+
+  await hamming.experiments.run(
+    {
+      name: "test experiment #2",
+      dataset: dataset.id,
+      scoring: [ScoreType.StringDiff],
+    },
+    async ({ query }) => {
+      console.log(`Query: ${query}`);
+      const output = await doSimpleRag(query);
+      const response = output.response;
+      return { response };
+    },
+  );
+}
+
 async function runExperiment() {
   const datasets = await hamming.datasets.list();
-  console.log("🚀 ~ file: index.ts:24 ~ runExperiment ~ datasets:", datasets);
-
   const dataset = await createDataset();
 
   hamming.experiments.run(
@@ -149,7 +147,7 @@ async function runExperiment() {
           metadata: {
             engine: "pinecone",
           },
-        })
+        }),
       );
 
       trace.log(
@@ -159,21 +157,21 @@ async function runExperiment() {
           metadata: {
             model: "t5-base",
           },
-        })
+        }),
       );
 
       const response = `Hi ${query}`;
       console.log(`Response: ${response}`);
 
       return { response };
-    }
+    },
   );
 }
 
 async function run() {
   // await createLargeDataset(hamming, 1000);
   // await runExperiment();
-  await foraExample();
+  await simpleRagExample();
 }
 
 run().catch((err) => {

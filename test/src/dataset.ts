@@ -56,18 +56,18 @@ function generateRandomMetadata(): Metadata {
     [MetadataKey.Ranking]: Math.floor(Math.random() * 100),
     [MetadataKey.Labels]: randomMultipleChoice(
       labels,
-      Math.floor(Math.random() * 5)
+      Math.floor(Math.random() * 5),
     ),
     [MetadataKey.RiskLevel]: Math.random() > 0.5 ? "low" : "high",
     [MetadataKey.Rarity]: Math.random(),
     [MetadataKey.OriginalAuthor]: randomChoice(originalAuthors),
     [MetadataKey.TopLibraries]: randomMultipleChoice(
       topLibraries,
-      Math.floor(Math.random() * 3)
+      Math.floor(Math.random() * 3),
     ),
   };
   const keepMetadataKey = Array.from(Object.keys(fullMetadata)).filter(
-    () => Math.random() > 0.5
+    () => Math.random() > 0.5,
   );
   const metadata: Metadata = {};
   for (const key of keepMetadataKey) {

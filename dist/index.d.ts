@@ -10,6 +10,10 @@ interface ClientOptions {
     apiKey: string;
     baseURL: string;
 }
+interface HttpClientOptions {
+    apiKey: string;
+    baseURL: string;
+}
 interface Experiment {
     id: number;
     name: string;
@@ -53,11 +57,9 @@ interface Dataset {
     description?: string;
     items: DatasetItem[];
 }
-interface DatasetLite {
-    id: number;
-    name: string;
-    description?: string;
-}
+type DatasetWithItems = Dataset & {
+    items: DatasetItem[];
+};
 declare class Experiments {
     private client;
     private items;
@@ -88,7 +90,7 @@ declare class Datasets {
     private client;
     constructor(client: Hamming);
     load(id: DatasetId): Promise<Dataset>;
-    list(): Promise<DatasetLite[]>;
+    list(): Promise<DatasetWithItems[]>;
     create(opts: CreateDatasetOptions): Promise<Dataset>;
 }
 interface CreateDatasetOptions {
@@ -99,7 +101,7 @@ interface CreateDatasetOptions {
 declare class HttpClient {
     apiKey: string;
     baseURL: string;
-    constructor(opts: ClientOptions);
+    constructor(opts: HttpClientOptions);
     private sanitize_base_url;
     fetch(input: string, init?: RequestInit | undefined): Promise<Response>;
 }
@@ -141,4 +143,4 @@ declare class Hamming extends HttpClient {
     tracing: Tracing;
 }
 
-export { type ClientOptions, type CreateDatasetOptions, type DatasetId, type DatasetItemValue, DefaultScoreTypes, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, Hamming, type InputType, type MetadataType, type OutputType, type Runner, ScoreType };
+export { type ClientOptions, type CreateDatasetOptions, type DatasetId, type DatasetItemValue, DefaultScoreTypes, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, Hamming, type HttpClientOptions, type InputType, type MetadataType, type OutputType, type Runner, ScoreType };

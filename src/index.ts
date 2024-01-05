@@ -12,6 +12,11 @@ export interface ClientOptions {
   baseURL: string;
 }
 
+export interface HttpClientOptions {
+  apiKey: string;
+  baseURL: string;
+}
+
 export interface Experiment {
   id: number;
   name: string;
@@ -57,11 +62,7 @@ interface Dataset {
   items: DatasetItem[];
 }
 
-interface DatasetLite {
-  id: number;
-  name: string;
-  description?: string;
-}
+type DatasetWithItems = Dataset & { items: DatasetItem[] };
 
 class ExperimentItems {
   private client: Hamming;
@@ -72,7 +73,7 @@ class ExperimentItems {
 
   async start(
     experiment: Experiment,
-    datasetItem: DatasetItem
+    datasetItem: DatasetItem,
   ): Promise<ExperimentItemContext> {
     const resp = await this.client.fetch(
       `/experiments/${experiment.id}/items`,
@@ -83,7 +84,7 @@ class ExperimentItems {
           output: {},
           metrics: {},
         }),
-      }
+      },
     );
     const data = await resp.json();
     const item = data.item as ExperimentItem;
@@ -108,7 +109,7 @@ class ExperimentItems {
             durationMs,
           },
         }),
-      }
+      },
     );
     await this.client.tracing._flush(item.id);
   }
@@ -150,7 +151,7 @@ class Experiments {
   private async start(
     name: string,
     dataset: number,
-    scoring: ScoreType[]
+    scoring: ScoreType[],
   ): Promise<Experiment> {
     const status = ExperimentStatus.RUNNING;
     const resp = await this.client.fetch("/experiments", {
@@ -168,7 +169,7 @@ class Experiments {
 
   private async end(
     experiment: Experiment,
-    status: ExperimentStatus = ExperimentStatus.FINISHED
+    status: ExperimentStatus = ExperimentStatus.FINISHED,
   ) {
     await this.client.fetch(`/experiments/${experiment.id}`, {
       method: "PATCH",
@@ -219,10 +220,10 @@ class Datasets {
     return data.dataset as Dataset;
   }
 
-  async list(): Promise<DatasetLite[]> {
+  async list(): Promise<DatasetWithItems[]> {
     const resp = await this.client.fetch(`/datasets`);
     const data = await resp.json();
-    return data.datasets as DatasetLite[];
+    return data.datasets as DatasetWithItems[];
   }
 
   async create(opts: CreateDatasetOptions): Promise<Dataset> {
@@ -250,7 +251,7 @@ class HttpClient {
   apiKey: string;
   baseURL: string;
 
-  constructor(opts: ClientOptions) {
+  constructor(opts: HttpClientOptions) {
     this.apiKey = opts.apiKey;
     this.baseURL = this.sanitize_base_url(opts.baseURL);
   }
@@ -355,20 +356,19 @@ class Tracing {
   }
 
   VectorSearchEvent(params: VectorSearchEventParams): TraceEvent {
-    //Our goal is to normalize normal string elements into the document structure
-    if (
-      Array.isArray(params.results) &&
-      params.results.every((item) => typeof item === "string")
-    ) {
-      params.results = params.results.map((result: any) => ({
-        pageContent: result,
-        metadata: {},
-      }));
-    }
+    const normalizedResults = params.results?.every(
+      (item) => typeof item === "string",
+    )
+      ? params.results.map((result: any) => ({
+          pageContent: result,
+          metadata: {},
+        }))
+      : params.results;
 
     return {
       kind: "vector",
       ...params,
+      results: normalizedResults,
     };
   }
 
