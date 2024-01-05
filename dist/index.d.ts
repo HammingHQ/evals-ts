@@ -10,6 +10,10 @@ interface ClientOptions {
     apiKey: string;
     baseURL: string;
 }
+interface HttpClientOptions {
+    apiKey: string;
+    baseURL: string;
+}
 interface Experiment {
     id: number;
     name: string;
@@ -51,8 +55,10 @@ interface Dataset {
     id: number;
     name: string;
     description?: string;
-    items: DatasetItem[];
 }
+type DatasetWithItems = Dataset & {
+    items: DatasetItem[];
+};
 declare class Experiments {
     private client;
     private items;
@@ -82,17 +88,14 @@ declare const DefaultScoreTypes: ScoreType[];
 declare class Datasets {
     private client;
     constructor(client: Hamming);
-    load(id: DatasetId): Promise<Dataset>;
-    create(opts: CreateDatasetOptions): Promise<Dataset>;
+    load(id: DatasetId): Promise<DatasetWithItems>;
+    list(): Promise<Dataset[]>;
+    create(opts: CreateDatasetOptions): Promise<DatasetWithItems>;
 }
 interface CreateDatasetOptions {
     name: string;
     description?: string;
     items: DatasetItemValue[];
-}
-declare class HttpClientOptions {
-    apiKey: string;
-    baseURL: string;
 }
 declare class HttpClient {
     apiKey: string;
@@ -109,9 +112,13 @@ interface LLMEventParams {
         model?: string;
     };
 }
+interface Document {
+    pageContent: string;
+    metadata: Record<string, any>;
+}
 interface VectorSearchEventParams {
     query?: string;
-    results?: string[];
+    results?: Document[] | string[];
     metadata?: {
         engine?: string;
     };
@@ -135,4 +142,4 @@ declare class Hamming extends HttpClient {
     tracing: Tracing;
 }
 
-export { type ClientOptions, type CreateDatasetOptions, type DatasetId, type DatasetItemValue, DefaultScoreTypes, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, Hamming, type InputType, type MetadataType, type OutputType, type Runner, ScoreType };
+export { type ClientOptions, type CreateDatasetOptions, type DatasetId, type DatasetItemValue, DefaultScoreTypes, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, Hamming, type HttpClientOptions, type InputType, type MetadataType, type OutputType, type Runner, ScoreType };

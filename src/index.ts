@@ -12,6 +12,11 @@ export interface ClientOptions {
   baseURL: string;
 }
 
+export interface HttpClientOptions {
+  apiKey: string;
+  baseURL: string;
+}
+
 export interface Experiment {
   id: number;
   name: string;
@@ -54,8 +59,9 @@ interface Dataset {
   id: number;
   name: string;
   description?: string;
-  items: DatasetItem[];
 }
+
+type DatasetWithItems = Dataset & { items: DatasetItem[] };
 
 class ExperimentItems {
   private client: Hamming;
@@ -68,14 +74,17 @@ class ExperimentItems {
     experiment: Experiment,
     datasetItem: DatasetItem,
   ): Promise<ExperimentItemContext> {
-    const resp = await this.client.fetch(`/experiments/${experiment.id}/items`, {
-      method: "POST",
-      body: JSON.stringify({
-        datasetItemId: datasetItem.id,
-        output: {},
-        metrics: {},
-      }),
-    });
+    const resp = await this.client.fetch(
+      `/experiments/${experiment.id}/items`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          datasetItemId: datasetItem.id,
+          output: {},
+          metrics: {},
+        }),
+      },
+    );
     const data = await resp.json();
     const item = data.item as ExperimentItem;
 
@@ -89,15 +98,18 @@ class ExperimentItems {
   async end(itemContext: ExperimentItemContext, output: OutputType) {
     const { item, startTs } = itemContext;
     const durationMs = Date.now() - startTs;
-    await this.client.fetch(`/experiments/${item.experimentId}/items/${item.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        output,
-        metrics: {
-          durationMs,
-        },
-      }),
-    });
+    await this.client.fetch(
+      `/experiments/${item.experimentId}/items/${item.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          output,
+          metrics: {
+            durationMs,
+          },
+        }),
+      },
+    );
     await this.client.tracing._flush(item.id);
   }
 }
@@ -201,13 +213,19 @@ class Datasets {
     this.client = client;
   }
 
-  async load(id: DatasetId): Promise<Dataset> {
+  async load(id: DatasetId): Promise<DatasetWithItems> {
     const resp = await this.client.fetch(`/datasets/${id}`);
     const data = await resp.json();
-    return data.dataset as Dataset;
+    return data.dataset as DatasetWithItems;
   }
 
-  async create(opts: CreateDatasetOptions): Promise<Dataset> {
+  async list(): Promise<Dataset[]> {
+    const resp = await this.client.fetch(`/datasets`);
+    const data = await resp.json();
+    return data.datasets as Dataset[];
+  }
+
+  async create(opts: CreateDatasetOptions): Promise<DatasetWithItems> {
     const { name, description, items } = opts;
     const resp = await this.client.fetch("/datasets", {
       method: "POST",
@@ -218,7 +236,7 @@ class Datasets {
       }),
     });
     const data = await resp.json();
-    return data.dataset as Dataset;
+    return data.dataset as DatasetWithItems;
   }
 }
 
@@ -226,11 +244,6 @@ export interface CreateDatasetOptions {
   name: string;
   description?: string;
   items: DatasetItemValue[];
-}
-
-class HttpClientOptions {
-  apiKey: string;
-  baseURL: string;
 }
 
 class HttpClient {
@@ -269,15 +282,20 @@ interface LLMEventParams {
   output?: string;
   metadata?: {
     model?: string;
-  }
+  };
+}
+
+interface Document {
+  pageContent: string;
+  metadata: Record<string, any>;
 }
 
 interface VectorSearchEventParams {
   query?: string;
-  results?: string[];
+  results?: Document[] | string[];
   metadata?: {
     engine?: string;
-  }
+  };
 }
 
 interface Trace {
@@ -303,7 +321,7 @@ class Tracing {
   async _flush(experimentItemId: number) {
     const events = this.collected;
     this.collected = [];
-    
+
     const rootTrace: Trace = {
       id: this.nextTraceId(),
       experimentItemId,
@@ -331,15 +349,29 @@ class Tracing {
 
   LLMEvent(params: LLMEventParams): TraceEvent {
     return {
-      kind: "llm", 
-      ...params 
+      kind: "llm",
+      ...params,
     };
   }
 
   VectorSearchEvent(params: VectorSearchEventParams): TraceEvent {
-    return { 
-      kind: "vector", 
-      ...params 
+    const isString = (item: any) => typeof item === "string";
+    const hasStringResults = params.results?.every(isString);
+    const normalizeResult = (result: string | Document): Document => {
+      if (typeof result === "string") {
+        return { pageContent: result, metadata: {} };
+      }
+      return result;
+    };
+
+    const results = hasStringResults
+      ? params.results?.map(normalizeResult)
+      : params.results;
+
+    return {
+      kind: "vector",
+      ...params,
+      results,
     };
   }
 
