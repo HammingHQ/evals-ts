@@ -130,9 +130,10 @@ class Experiments {
     const {
       name = this.generateName(dataset.name),
       scoring = DefaultScoreTypes,
+      metadata = {},
     } = opts;
 
-    const experiment = await this.start(name, datasetId, scoring);
+    const experiment = await this.start(name, datasetId, scoring, metadata);
     try {
       for (const datasetItem of dataset.items) {
         const itemContext = await this.items.start(experiment, datasetItem);
@@ -151,6 +152,7 @@ class Experiments {
     name: string,
     dataset: number,
     scoring: ScoreType[],
+    metadata: MetadataType
   ): Promise<Experiment> {
     const status = ExperimentStatus.RUNNING;
     const resp = await this.client.fetch("/experiments", {
@@ -160,6 +162,7 @@ class Experiments {
         dataset,
         status,
         scoring,
+        metadata,
       }),
     });
     const data = await resp.json();
@@ -190,6 +193,7 @@ interface RunOptions {
   dataset: DatasetId;
   name?: string;
   scoring?: ScoreType[];
+  metadata?: MetadataType;
 }
 
 export type Runner = (input: InputType) => Promise<OutputType>;
