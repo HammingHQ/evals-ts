@@ -73,6 +73,7 @@ interface RunOptions {
     dataset: DatasetId;
     name?: string;
     scoring?: ScoreType[];
+    metadata?: MetadataType;
 }
 type Runner = (input: InputType) => Promise<OutputType>;
 declare enum ScoreType {
