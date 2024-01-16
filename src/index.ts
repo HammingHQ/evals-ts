@@ -152,7 +152,7 @@ class Experiments {
     name: string,
     dataset: number,
     scoring: ScoreType[],
-    metadata: MetadataType
+    metadata: MetadataType,
   ): Promise<Experiment> {
     const status = ExperimentStatus.RUNNING;
     const resp = await this.client.fetch("/experiments", {
