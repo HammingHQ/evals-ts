@@ -281,7 +281,7 @@ class HttpClient {
 
 type TraceEvent = Record<string, unknown>;
 
-interface LLMEventParams {
+interface GenerationParams {
   input?: string;
   output?: string;
   metadata?: {
@@ -294,7 +294,7 @@ interface Document {
   metadata: Record<string, any>;
 }
 
-interface VectorSearchEventParams {
+interface RetrievalEventParams {
   query?: string;
   results?: Document[] | string[];
   metadata?: {
@@ -351,14 +351,14 @@ class Tracing {
     });
   }
 
-  LLMEvent(params: LLMEventParams): TraceEvent {
+  private _generationEvent(params: GenerationParams): TraceEvent {
     return {
       kind: "llm",
       ...params,
     };
   }
 
-  VectorSearchEvent(params: VectorSearchEventParams): TraceEvent {
+  private _retrievalEvent(params: RetrievalEventParams): TraceEvent {
     const isString = (item: any) => typeof item === "string";
     const hasStringResults = params.results?.every(isString);
     const normalizeResult = (result: string | Document): Document => {
@@ -387,6 +387,14 @@ class Tracing {
     } else {
       this.collected.push(keyOrTrace);
     }
+  }
+
+  logGeneration(params: GenerationParams): void {
+    this.log(this._generationEvent(params));
+  }
+
+  logRetrieval(params: RetrievalEventParams): void {
+    this.log(this._retrievalEvent(params));
   }
 }
 
