@@ -8,7 +8,7 @@ declare enum ExperimentStatus {
 }
 interface ClientOptions {
     apiKey: string;
-    baseURL: string;
+    baseURL?: string;
 }
 interface HttpClientOptions {
     apiKey: string;
