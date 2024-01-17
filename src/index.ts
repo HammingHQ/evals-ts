@@ -9,7 +9,7 @@ export enum ExperimentStatus {
 
 export interface ClientOptions {
   apiKey: string;
-  baseURL: string;
+  baseURL?: string;
 }
 
 export interface HttpClientOptions {
@@ -394,7 +394,7 @@ export class Hamming extends HttpClient {
   constructor(config: ClientOptions) {
     super({
       apiKey: config.apiKey,
-      baseURL: config.baseURL,
+      baseURL: config.baseURL ?? "https://app.hamming.ai/api/rest",
     });
   }
 

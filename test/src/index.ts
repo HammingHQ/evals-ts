@@ -12,7 +12,6 @@ export const env = envsafe({
 
 const hamming = new Hamming({
   apiKey: env.HAMMING_API_KEY,
-  baseURL: env.HAMMING_BASE_URL,
 });
 
 const trace = hamming.tracing;
@@ -97,6 +96,7 @@ async function createDataset() {
 
 async function simpleRagExample() {
   const dataset = await createDataset();
+  console.log("🚀 ~ simpleRagExample ~ dataset:", dataset);
 
   await hamming.experiments.run(
     {
