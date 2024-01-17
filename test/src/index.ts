@@ -19,15 +19,13 @@ const trace = hamming.tracing;
 async function doSimpleRag(question: string) {
   const translatedQuestion = `Standalone question: ${question}`;
 
-  trace.log(
-    trace.LLMEvent({
-      input: question,
-      output: translatedQuestion,
-      metadata: {
-        model: "GPT 3.5 Turbo",
-      },
-    }),
-  );
+  trace.logGeneration({
+    input: question,
+    output: translatedQuestion,
+    metadata: {
+      model: "GPT 3.5 Turbo",
+    },
+  });
 
   //This is a common structure
   const retrievedDocs = [
@@ -47,15 +45,16 @@ async function doSimpleRag(question: string) {
     },
   ];
 
-  trace.log(
-    trace.VectorSearchEvent({
-      query: translatedQuestion,
-      results: retrievedDocs,
-      metadata: {
-        engine: "pinecone",
-      },
-    }),
-  );
+  trace.logRetrieval({
+    query: translatedQuestion,
+    results: retrievedDocs.map((doc) => ({
+      pageContent: doc.pageContent,
+      metadata: doc.metadata,
+    })),
+    metadata: {
+      engine: "pinecone",
+    },
+  });
 
   const finalAnswer = {
     response: "This is my final answer; this could be streamed or not",
@@ -136,28 +135,33 @@ async function runExperiment() {
       const sleepMs = Math.random() * 1000;
       await new Promise((resolve) => setTimeout(resolve, sleepMs));
 
-      trace.log(
-        trace.VectorSearchEvent({
-          query: "How many people live in New York?",
-          results: [
-            "The population of New York is 8 million",
-            "New York is the largest city in the US",
-          ],
-          metadata: {
-            engine: "pinecone",
-          },
-        }),
-      );
+      // Retrieval augmented generation
+      // logRetrieval, logLLM, logGeneration
 
-      trace.log(
-        trace.LLMEvent({
-          input: "How many people live in New York?",
-          output: "8 million",
-          metadata: {
-            model: "t5-base",
+      trace.logRetrieval({
+        query: "How many people live in New York?",
+        results: [
+          {
+            pageContent: "The population of New York is 8 million",
+            metadata: {},
           },
-        }),
-      );
+          {
+            pageContent: "New York is the largest city in the US",
+            metadata: {},
+          },
+        ],
+        metadata: {
+          engine: "pinecone",
+        },
+      });
+
+      trace.logGeneration({
+        input: "How many people live in New York?",
+        output: "8 million",
+        metadata: {
+          model: "t5-base",
+        },
+      });
 
       const response = `Hi ${query}`;
       console.log(`Response: ${response}`);

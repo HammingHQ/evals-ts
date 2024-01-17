@@ -106,7 +106,7 @@ declare class HttpClient {
     fetch(input: string, init?: RequestInit | undefined): Promise<Response>;
 }
 type TraceEvent = Record<string, unknown>;
-interface LLMEventParams {
+interface GenerationParams {
     input?: string;
     output?: string;
     metadata?: {
@@ -117,7 +117,7 @@ interface Document {
     pageContent: string;
     metadata: Record<string, any>;
 }
-interface VectorSearchEventParams {
+interface RetrievalEventParams {
     query?: string;
     results?: Document[] | string[];
     metadata?: {
@@ -131,10 +131,12 @@ declare class Tracing {
     constructor(client: Hamming);
     private nextTraceId;
     _flush(experimentItemId: number): Promise<void>;
-    LLMEvent(params: LLMEventParams): TraceEvent;
-    VectorSearchEvent(params: VectorSearchEventParams): TraceEvent;
+    private _generationEvent;
+    private _retrievalEvent;
     log(key: string, value: unknown): void;
     log(trace: TraceEvent): void;
+    logGeneration(params: GenerationParams): void;
+    logRetrieval(params: RetrievalEventParams): void;
 }
 declare class Hamming extends HttpClient {
     constructor(config: ClientOptions);
