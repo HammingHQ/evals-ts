@@ -96,7 +96,6 @@ async function createDataset() {
 
 async function simpleRagExample() {
   const dataset = await createDataset();
-  console.log("🚀 ~ simpleRagExample ~ dataset:", dataset);
 
   await hamming.experiments.run(
     {
