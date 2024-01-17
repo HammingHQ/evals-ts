@@ -135,9 +135,6 @@ async function runExperiment() {
       const sleepMs = Math.random() * 1000;
       await new Promise((resolve) => setTimeout(resolve, sleepMs));
 
-      // Retrieval augmented generation
-      // logRetrieval, logLLM, logGeneration
-
       trace.logRetrieval({
         query: "How many people live in New York?",
         results: [
