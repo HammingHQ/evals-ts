@@ -1,3 +1,5 @@
+import { HttpClient } from "./httpClient";
+
 export enum ExperimentStatus {
   CREATED = "CREATED",
   RUNNING = "RUNNING",
@@ -5,17 +7,6 @@ export enum ExperimentStatus {
   SCORING_FAILED = "SCORING_FAILED",
   FINISHED = "FINISHED",
   FAILED = "FAILED",
-}
-
-export interface ClientOptions {
-  apiKey: string;
-  baseURL?: string;
-}
-const CLIENT_OPTIONS_KEYS: (keyof ClientOptions)[] = ["apiKey", "baseURL"];
-
-export interface HttpClientOptions {
-  apiKey: string;
-  baseURL: string;
 }
 
 export interface Experiment {
@@ -201,7 +192,6 @@ export type Runner = (input: InputType) => Promise<OutputType>;
 
 export enum ScoreType {
   AccuracyAI = "accuracy_ai",
-  AccuracyHuman = "accuracy_human",
   FactsCompare = "facts_compare",
   ContextRecall = "context_recall",
   ContextPrecision = "context_precision",
@@ -249,68 +239,6 @@ export interface CreateDatasetOptions {
   name: string;
   description?: string;
   items: DatasetItemValue[];
-}
-
-class HttpClient {
-  apiKey: string;
-  baseURL: string;
-
-  constructor(opts: HttpClientOptions) {
-    this.apiKey = opts.apiKey;
-    this.baseURL = this.sanitize_base_url(opts.baseURL);
-  }
-
-  private sanitize_base_url(baseURL: string): string {
-    baseURL = baseURL.trim();
-    if (baseURL.endsWith("/")) {
-      return baseURL.slice(0, -1);
-    }
-    return baseURL;
-  }
-
-  async fetch(
-    input: string,
-    init?: RequestInit | undefined,
-  ): Promise<Response> {
-    const url = this.baseURL + input;
-    const response = await fetch(url, {
-      ...init,
-      headers: {
-        ...init?.headers,
-        authorization: `Bearer ${this.apiKey}`,
-        "content-type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      this.handleErrorResponse(response, url);
-    }
-
-    return response;
-  }
-
-  // This could be redundant if we sent the correct error message from the server
-  private async handleErrorResponse(response: Response, url: string) {
-    const status = response.status;
-    const statusText = response.statusText;
-
-    let errorMessage = `Request failed with status ${status} ${statusText} while accessing ${url}.`;
-
-    if (status === 401) {
-      errorMessage = `UNAUTHORIZED: Invalid API key ending in '${this.apiKey.slice(
-        -4,
-      )}'. Visit https://app.hamming.ai/settings to see valid API keys.`;
-    } else if (status === 403) {
-      errorMessage = `FORBIDDEN: You do not have permission to access ${url}.`;
-    } else if (status === 404) {
-      errorMessage = `NOT FOUND: The requested resource at ${url} could not be found.`;
-    } else if (status >= 500) {
-      errorMessage = `SERVER ERROR: There was a problem with the server while accessing ${url}. If the issue persists, feel free to email us at founders@hamming.ai for help.`;
-    }
-
-    // Re-throw the error to be handled by the caller
-    throw new Error(errorMessage);
-  }
 }
 
 type TraceEvent = Record<string, unknown>;
@@ -431,6 +359,12 @@ class Tracing {
     this.log(this._retrievalEvent(params));
   }
 }
+
+export interface ClientOptions {
+  apiKey: string;
+  baseURL?: string;
+}
+const CLIENT_OPTIONS_KEYS: (keyof ClientOptions)[] = ["apiKey", "baseURL"];
 
 export class Hamming extends HttpClient {
   constructor(config: ClientOptions) {
