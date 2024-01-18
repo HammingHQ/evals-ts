@@ -304,9 +304,9 @@ class HttpClient {
     } else if (status === 403) {
       errorMessage = `FORBIDDEN: You do not have permission to access ${url}.`;
     } else if (status === 404) {
-      errorMessage = `NOT FOUND: The requested resource could not be found while accessing ${url}.`;
+      errorMessage = `NOT FOUND: The requested resource at ${url} could not be found.`;
     } else if (status >= 500) {
-      errorMessage = `Server Error: There was a problem with the server while accessing ${url}. Please try again later.`;
+      errorMessage = `SERVER ERROR: There was a problem with the server while accessing ${url}. If the issue persists, feel free to email us at founders@hamming.ai for help.`;
     }
 
     // Re-throw the error to be handled by the caller
