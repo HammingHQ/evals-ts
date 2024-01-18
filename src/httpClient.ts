@@ -15,6 +15,7 @@ interface HttpClientOptions {
 }
 
 const DEFAULT_RETRY_DELAY = 1000;
+const DEFAULT_MAX_RETRIES = 3;
 
 /**
  * The HttpClient provides methods to perform HTTP requests.
@@ -50,8 +51,8 @@ export class HttpClient {
   async fetch(
     input: string,
     init?: RequestInit | undefined,
-    maxRetries: number = 3, // default to 3 retries
-    retryDelay: number = DEFAULT_RETRY_DELAY, // default to 1 second delay
+    maxRetries: number = DEFAULT_MAX_RETRIES,
+    retryDelay: number = DEFAULT_RETRY_DELAY,
   ): Promise<Response> {
     const url = this.baseURL + input;
 
@@ -73,7 +74,7 @@ export class HttpClient {
 
         // Retry logic for transient errors
         if (this.shouldRetry(response)) {
-          await this.handleRetry(response, retryDelay);
+          await this.waitForRetry(response, retryDelay);
         } else {
           // For other errors, throw an error
           throw new Error(errorMessage);
@@ -90,7 +91,9 @@ export class HttpClient {
   }
 
   private nonTransientError(response: Response): boolean {
-    return [UNAUTHORIZED, FORBIDDEN, NOT_FOUND].includes(response.status);
+    return [UNAUTHORIZED, FORBIDDEN, NOT_FOUND, BAD_REQUEST].includes(
+      response.status,
+    );
   }
 
   private delay(ms: number) {
@@ -158,7 +161,7 @@ export class HttpClient {
    *
    * If not, we use the retryDelay parameter to determine how long to wait.
    */
-  private async handleRetry(
+  private async waitForRetry(
     response: Response,
     retryDelay: number,
   ): Promise<void> {

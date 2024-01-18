@@ -1,2 +1,2 @@
-"use strict";Object.defineProperty(exports, "__esModule", {value: true});var _chunkTOGIBRKCcjs = require('./chunk-TOGIBRKC.cjs');exports.HttpClient = _chunkTOGIBRKCcjs.b;
+"use strict";Object.defineProperty(exports, "__esModule", {value: true});var _chunkEYATP42Acjs = require('./chunk-EYATP42A.cjs');exports.HttpClient = _chunkEYATP42Acjs.b;
 //# sourceMappingURL=httpClient.cjs.map

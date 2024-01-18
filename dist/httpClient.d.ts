@@ -25,8 +25,7 @@ declare class HttpClient {
      * @returns The sanitized base URL.
      */
     private sanitizeBaseUrl;
-    fetch(input: string, init?: RequestInit | undefined, maxRetries?: number, // default to 3 retries
-    retryDelay?: number): Promise<Response>;
+    fetch(input: string, init?: RequestInit | undefined, maxRetries?: number, retryDelay?: number): Promise<Response>;
     private nonTransientError;
     private delay;
     private shouldRetry;
@@ -40,7 +39,7 @@ declare class HttpClient {
      *
      * If not, we use the retryDelay parameter to determine how long to wait.
      */
-    private handleRetry;
+    private waitForRetry;
     private calculateRetryDelayForHeaders;
 }
 
