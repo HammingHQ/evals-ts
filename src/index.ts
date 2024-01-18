@@ -289,8 +289,7 @@ class HttpClient {
     return response;
   }
 
-  //This could be redundant if we sent the correct error message from the server
-  // Modify the error handler to include the action description
+  // This could be redundant if we sent the correct error message from the server
   private async handleErrorResponse(response: Response, url: string) {
     const status = response.status;
     const statusText = response.statusText;
