@@ -192,7 +192,6 @@ export type Runner = (input: InputType) => Promise<OutputType>;
 
 export enum ScoreType {
   AccuracyAI = "accuracy_ai",
-  AccuracyHuman = "accuracy_human",
   FactsCompare = "facts_compare",
   ContextRecall = "context_recall",
   ContextPrecision = "context_precision",

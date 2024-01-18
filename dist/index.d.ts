@@ -72,7 +72,6 @@ interface RunOptions {
 type Runner = (input: InputType) => Promise<OutputType>;
 declare enum ScoreType {
     AccuracyAI = "accuracy_ai",
-    AccuracyHuman = "accuracy_human",
     FactsCompare = "facts_compare",
     ContextRecall = "context_recall",
     ContextPrecision = "context_precision",
