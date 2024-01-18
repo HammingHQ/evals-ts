@@ -57,6 +57,7 @@ export class HttpClient {
     const url = this.baseURL + input;
 
     let lastError: Error | null = null;
+    let currentRetryDelay = retryDelay;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
@@ -74,7 +75,8 @@ export class HttpClient {
 
         // Retry logic for transient errors
         if (this.shouldRetry(response)) {
-          await this.waitForRetry(response, retryDelay);
+          await this.waitForRetry(response, currentRetryDelay);
+          currentRetryDelay *= 2;
         } else {
           // For other errors, throw an error
           throw new Error(errorMessage);
@@ -84,7 +86,8 @@ export class HttpClient {
 
         // Fail fast for a non-transient error
         if (!this.isNetworkError(error)) break;
-        await this.delay(retryDelay);
+        await this.delay(currentRetryDelay);
+        currentRetryDelay *= 2;
       }
     }
     throw lastError;
