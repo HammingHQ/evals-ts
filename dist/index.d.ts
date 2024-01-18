@@ -104,6 +104,7 @@ declare class HttpClient {
     constructor(opts: HttpClientOptions);
     private sanitize_base_url;
     fetch(input: string, init?: RequestInit | undefined): Promise<Response>;
+    private handleErrorResponse;
 }
 type TraceEvent = Record<string, unknown>;
 interface GenerationParams {
