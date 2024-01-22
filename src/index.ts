@@ -10,7 +10,7 @@ export enum ExperimentStatus {
 }
 
 export interface Experiment {
-  id: number;
+  id: string;
   name: string;
   description?: string | null;
   datasetId: number;
@@ -23,9 +23,9 @@ export interface ExperimentItemMetrics {
 }
 
 export interface ExperimentItem {
-  id: number;
-  experimentId: number;
-  datasetItemId: number;
+  id: string;
+  experimentId: string;
+  datasetItemId: string;
   output: OutputType;
   metrics: ExperimentItemMetrics;
 }
@@ -45,10 +45,10 @@ export interface DatasetItemValue {
   metadata: MetadataType;
 }
 
-type DatasetItem = DatasetItemValue & { id: number };
+type DatasetItem = DatasetItemValue & { id: string };
 
 interface Dataset {
-  id: number;
+  id: string;
   name: string;
   description?: string;
 }
@@ -142,7 +142,7 @@ class Experiments {
 
   private async start(
     name: string,
-    dataset: number,
+    dataset: string,
     scoring: ScoreType[],
     metadata: MetadataType,
   ): Promise<Experiment> {
@@ -179,7 +179,7 @@ class Experiments {
   }
 }
 
-export type DatasetId = number;
+export type DatasetId = string;
 
 interface RunOptions {
   dataset: DatasetId;
@@ -266,7 +266,7 @@ interface RetrievalEventParams {
 
 interface Trace {
   id: number;
-  experimentItemId: number;
+  experimentItemId: string;
   parentId?: number;
   event: TraceEvent;
 }
@@ -284,7 +284,7 @@ class Tracing {
     return this.currentLocalTraceId++;
   }
 
-  async _flush(experimentItemId: number) {
+  async _flush(experimentItemId: string) {
     const events = this.collected;
     this.collected = [];
 
