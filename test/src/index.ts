@@ -8,6 +8,7 @@ dotenv.config();
 export const env = envsafe({
   HAMMING_API_KEY: str(),
   HAMMING_BASE_URL: str(),
+  DATASET_ID: str(),
 });
 
 const hamming = new Hamming({
@@ -101,7 +102,7 @@ async function simpleRagExample() {
     {
       name: "test experiment #2",
       // dataset: dataset.id,
-      dataset: 50,
+      dataset: env.DATASET_ID,
       scoring: [ScoreType.StringDiff],
     },
     async ({ query }) => {
@@ -114,7 +115,6 @@ async function simpleRagExample() {
 }
 
 async function runExperiment() {
-  const datasets = await hamming.datasets.list();
   const dataset = await createDataset();
 
   hamming.experiments.run(
@@ -172,8 +172,8 @@ async function runExperiment() {
 
 async function run() {
   // await createLargeDataset(hamming, 1000);
-  // await runExperiment();
-  await simpleRagExample();
+  await runExperiment();
+  // await simpleRagExample();
 }
 
 run().catch((err) => {
