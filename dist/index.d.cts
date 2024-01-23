@@ -57,7 +57,9 @@ declare class Experiments {
     private client;
     private items;
     constructor(client: Hamming);
-    run(opts: RunOptions, run: Runner): Promise<void>;
+    run(opts: RunOptions, run: Runner): Promise<{
+        experimentUrl: string;
+    }>;
     private start;
     private end;
     private generateName;

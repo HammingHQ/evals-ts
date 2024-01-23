@@ -126,6 +126,9 @@ class Experiments {
     } = opts;
 
     const experiment = await this.start(name, datasetId, scoring, metadata);
+    const baseUrl = new URL(this.client.baseURL);
+    const experimentUrl = `${baseUrl.origin}/experiments/${experiment.id}`;
+
     try {
       for (const datasetItem of dataset.items) {
         const itemContext = await this.items.start(experiment, datasetItem);
@@ -137,12 +140,14 @@ class Experiments {
       throw err;
     } finally {
       await this.end(experiment);
+      console.log("See experiment results at:", experimentUrl);
+      return { experimentUrl };
     }
   }
 
   private async start(
     name: string,
-    dataset: string,
+    dataset: DatasetId,
     scoring: ScoreType[],
     metadata: MetadataType,
   ): Promise<Experiment> {
