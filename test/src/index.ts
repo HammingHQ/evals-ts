@@ -94,13 +94,12 @@ async function createDataset() {
 }
 
 async function simpleRagExample() {
-  // const dataset = await createDataset();
+  const dataset = await createDataset();
 
   await hamming.experiments.run(
     {
       name: "test experiment #2",
-      // dataset: dataset.id,
-      dataset: "clrojfr7w0002ee2znof1zw8k",
+      dataset: dataset.id,
       scoring: [ScoreType.StringDiff],
     },
     async ({ query }) => {
