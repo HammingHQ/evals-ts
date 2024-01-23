@@ -90,6 +90,9 @@ class ExperimentItems {
   async end(itemContext: ExperimentItemContext, output: OutputType) {
     const { item, startTs } = itemContext;
     const durationMs = Date.now() - startTs;
+    await this.client.tracing._flush(item.id);
+    // Completing the experiment item should happen after the traces are 
+    // flushed, since it will automatically trigger scoring.
     await this.client.fetch(
       `/experiments/${item.experimentId}/items/${item.id}`,
       {
@@ -102,7 +105,6 @@ class ExperimentItems {
         }),
       },
     );
-    await this.client.tracing._flush(item.id);
   }
 }
 
