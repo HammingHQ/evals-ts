@@ -10,7 +10,7 @@ export enum ExperimentStatus {
 }
 
 export interface Experiment {
-  id: number;
+  id: string;
   name: string;
   description?: string | null;
   datasetId: number;
@@ -23,9 +23,9 @@ export interface ExperimentItemMetrics {
 }
 
 export interface ExperimentItem {
-  id: number;
-  experimentId: number;
-  datasetItemId: number;
+  id: string;
+  experimentId: string;
+  datasetItemId: string;
   output: OutputType;
   metrics: ExperimentItemMetrics;
 }
@@ -271,7 +271,7 @@ interface RetrievalEventParams {
 
 interface Trace {
   id: number;
-  experimentItemId: number;
+  experimentItemId: string;
   parentId?: number;
   event: TraceEvent;
 }
@@ -289,7 +289,7 @@ class Tracing {
     return this.currentLocalTraceId++;
   }
 
-  async _flush(experimentItemId: number) {
+  async _flush(experimentItemId: string) {
     const events = this.collected;
     this.collected = [];
 

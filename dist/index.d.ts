@@ -9,7 +9,7 @@ declare enum ExperimentStatus {
     FAILED = "FAILED"
 }
 interface Experiment {
-    id: number;
+    id: string;
     name: string;
     description?: string | null;
     datasetId: number;
@@ -20,9 +20,9 @@ interface ExperimentItemMetrics {
     durationMs?: number;
 }
 interface ExperimentItem {
-    id: number;
-    experimentId: number;
-    datasetItemId: number;
+    id: string;
+    experimentId: string;
+    datasetItemId: string;
     output: OutputType;
     metrics: ExperimentItemMetrics;
 }
@@ -118,7 +118,7 @@ declare class Tracing {
     private currentLocalTraceId;
     constructor(client: Hamming);
     private nextTraceId;
-    _flush(experimentItemId: number): Promise<void>;
+    _flush(experimentItemId: string): Promise<void>;
     private _generationEvent;
     private _retrievalEvent;
     log(key: string, value: unknown): void;
