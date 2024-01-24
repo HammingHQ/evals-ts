@@ -1,4 +1,4 @@
-import { HttpClient } from "./httpClient";
+import { HttpClient } from "./fetchClient";
 
 export enum ExperimentStatus {
   CREATED = "CREATED",
