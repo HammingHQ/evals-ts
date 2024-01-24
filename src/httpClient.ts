@@ -59,7 +59,6 @@ export class HttpClient {
       },
     };
 
-    const MAX_ATTEMPTS = this.retries;
     const IS_DEBUG = this.debug;
 
     if (IS_DEBUG) {
@@ -72,6 +71,7 @@ export class HttpClient {
       console.debug(`Headers: ${JSON.stringify(finalInit.headers, null, 2)}`);
     }
 
+    const MAX_ATTEMPTS = this.retries;
     const resp = await this.fetchClient.fetchRetry(url, {
       ...finalInit,
       retryOn: function (attempt, error, response) {
@@ -87,11 +87,9 @@ export class HttpClient {
         );
       },
       retryDelay: function (attempt, error, response, input) {
-        if (IS_DEBUG) {
-          console.debug(
-            `Fetch attempt #${attempt}: input=${input}, error=${error?.message}, response status=${response?.status}, response status text=${response?.statusText}`,
-          );
-        }
+        console.warn(
+          `Fetch attempt #${attempt}: input=${input}, error=${error?.message}, response status=${response?.status}, response status text=${response?.statusText}`,
+        );
         return Math.pow(2, attempt) * 1000;
       },
     });
