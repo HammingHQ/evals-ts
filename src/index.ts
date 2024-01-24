@@ -1,4 +1,4 @@
-import { HttpClient } from "./fetchClient";
+import { HttpClient } from "./httpClient";
 
 export enum ExperimentStatus {
   CREATED = "CREATED",
@@ -66,19 +66,16 @@ class ExperimentItems {
     experiment: Experiment,
     datasetItem: DatasetItem,
   ): Promise<ExperimentItemContext> {
-    const resp = await this.client.fetch(
-      `/experiments/${experiment.id}/items`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          datasetItemId: datasetItem.id,
-          output: {},
-          metrics: {},
-        }),
+    const resp = await this.client.axios.request<{ item: ExperimentItem }>({
+      url: `/experiments/${experiment.id}/items`,
+      method: "POST",
+      data: {
+        datasetItemId: datasetItem.id,
+        output: {},
+        metrics: {},
       },
-    );
-    const data = await resp.json();
-    const item = data.item as ExperimentItem;
+    });
+    const item = resp.data.item;
 
     const startTs = Date.now();
     return {
@@ -91,20 +88,18 @@ class ExperimentItems {
     const { item, startTs } = itemContext;
     const durationMs = Date.now() - startTs;
     await this.client.tracing._flush(item.id);
-    // Completing the experiment item should happen after the traces are 
+    // Completing the experiment item should happen after the traces are
     // flushed, since it will automatically trigger scoring.
-    await this.client.fetch(
-      `/experiments/${item.experimentId}/items/${item.id}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          output,
-          metrics: {
-            durationMs,
-          },
-        }),
+    await this.client.axios.request({
+      url: `/experiments/${item.experimentId}/items/${item.id}`,
+      method: "PATCH",
+      data: {
+        output,
+        metrics: {
+          durationMs,
+        },
       },
-    );
+    });
   }
 }
 
@@ -154,29 +149,30 @@ class Experiments {
     metadata: MetadataType,
   ): Promise<Experiment> {
     const status = ExperimentStatus.RUNNING;
-    const resp = await this.client.fetch("/experiments", {
+    const resp = await this.client.axios.request<{ experiment: Experiment }>({
+      url: `/experiments`,
       method: "POST",
-      body: JSON.stringify({
+      data: {
         name,
         dataset,
         status,
         scoring,
         metadata,
-      }),
+      },
     });
-    const data = await resp.json();
-    return data.experiment as Experiment;
+    return resp.data.experiment;
   }
 
   private async end(
     experiment: Experiment,
     status: ExperimentStatus = ExperimentStatus.FINISHED,
   ) {
-    await this.client.fetch(`/experiments/${experiment.id}`, {
+    await this.client.axios.request({
+      url: `/experiments/${experiment.id}`,
       method: "PATCH",
-      body: JSON.stringify({
+      data: {
         status,
-      }),
+      },
     });
   }
 
@@ -216,29 +212,37 @@ class Datasets {
   }
 
   async load(id: DatasetId): Promise<DatasetWithItems> {
-    const resp = await this.client.fetch(`/datasets/${id}`);
-    const data = await resp.json();
-    return data.dataset as DatasetWithItems;
+    const resp = await this.client.axios.request<{ dataset: DatasetWithItems }>(
+      {
+        url: `/datasets/${id}`,
+        method: "GET",
+      },
+    );
+    return resp.data.dataset;
   }
 
   async list(): Promise<Dataset[]> {
-    const resp = await this.client.fetch(`/datasets`);
-    const data = await resp.json();
-    return data.datasets as Dataset[];
+    const resp = await this.client.axios.request<{ datasets: Dataset[] }>({
+      url: "/datasets",
+      method: "GET",
+    });
+    return resp.data.datasets;
   }
 
   async create(opts: CreateDatasetOptions): Promise<DatasetWithItems> {
     const { name, description, items } = opts;
-    const resp = await this.client.fetch("/datasets", {
-      method: "POST",
-      body: JSON.stringify({
-        name,
-        description,
-        items,
-      }),
-    });
-    const data = await resp.json();
-    return data.dataset as DatasetWithItems;
+    const resp = await this.client.axios.request<{ dataset: DatasetWithItems }>(
+      {
+        url: "/datasets",
+        method: "POST",
+        data: {
+          name,
+          description,
+          items,
+        },
+      },
+    );
+    return resp.data.dataset;
   }
 }
 
@@ -312,11 +316,12 @@ class Tracing {
       });
     }
 
-    await this.client.fetch(`/traces`, {
+    await this.client.axios.request({
+      url: "/traces",
       method: "POST",
-      body: JSON.stringify({
+      data: {
         traces,
-      }),
+      },
     });
   }
 

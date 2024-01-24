@@ -45,5 +45,9 @@
   "files": [
     "lib",
     "dist"
-  ]
+  ],
+  "dependencies": {
+    "axios": "^1.6.5",
+    "axios-retry": "^4.0.0"
+  }
 }
