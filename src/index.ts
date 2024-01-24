@@ -225,7 +225,9 @@ class Datasets {
     try {
       data = await resp.json();
     } catch (error) {
-      throw new Error(`Failed to parse dataset response as JSON: ${error}`);
+      throw new Error(
+        `Failed to parse dataset response as JSON for dataset ID: ${id}: ${error}`,
+      );
     }
     return data.dataset as DatasetWithItems;
   }
