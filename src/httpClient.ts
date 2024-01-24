@@ -50,7 +50,7 @@ export class HttpClient {
   ): Promise<Response> {
     const url = this.baseURL + input;
 
-    const finalInit = {
+    const requestInit = {
       ...init,
       headers: {
         ...init?.headers,
@@ -59,23 +59,22 @@ export class HttpClient {
       },
     };
 
-    const IS_DEBUG = this.debug;
+    const isDebug = this.debug;
 
-    if (IS_DEBUG) {
-      console.log("\n");
-      console.debug(`Fetching URL: ${url}`);
-      console.debug(`Method: ${finalInit.method || "GET"}`);
-      if (finalInit.body) {
-        console.debug(`Body: ${finalInit.body}`);
-      }
-      console.debug(`Headers: ${JSON.stringify(finalInit.headers, null, 2)}`);
+    if (isDebug) {
+      console.debug(
+        `\nFetching URL: ${url}` +
+          `\nMethod: ${requestInit.method || "GET"}` +
+          `${requestInit.body ? `\nBody: ${requestInit.body}` : ""}` +
+          `\nHeaders: ${JSON.stringify(requestInit.headers, null, 2)}`,
+      );
     }
 
-    const MAX_ATTEMPTS = this.retries;
+    const numRetries = this.retries;
     const resp = await this.fetchClient.fetchRetry(url, {
-      ...finalInit,
+      ...requestInit,
       retryOn: function (attempt, error, response) {
-        if (attempt >= MAX_ATTEMPTS) return false;
+        if (attempt >= numRetries) return false;
 
         // Retry on too many requests, internal server error, or TypeError
         const status = response?.status;
@@ -94,9 +93,8 @@ export class HttpClient {
       },
     });
 
-    if (IS_DEBUG) {
-      console.debug(`Response for ${url}: ${resp.status} ${resp.statusText}`);
-      console.debug("\n");
+    if (isDebug) {
+      console.debug(`Response for ${url}: ${resp.status} ${resp.statusText}\n`);
     }
 
     return resp;
