@@ -220,7 +220,13 @@ class Datasets {
     const resp = await this.client.fetch(`/datasets/${id}`, {
       method: "GET",
     });
-    const data = await resp.json();
+
+    let data: { dataset: DatasetWithItems };
+    try {
+      data = await resp.json();
+    } catch (error) {
+      throw new Error(`Failed to parse dataset response as JSON: ${error}`);
+    }
     return data.dataset as DatasetWithItems;
   }
 
