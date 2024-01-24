@@ -1,0 +1,7 @@
+import{a as t,b as p}from"./chunk-OXHECJZ4.js";var f=429,R=500,l=class{constructor(e){t(this,"apiKey");t(this,"baseURL");t(this,"fetchClient");t(this,"debug",!1);t(this,"retries",3);this.apiKey=e.apiKey,this.baseURL=this.sanitizeBaseUrl(e.baseURL),this.fetchClient=new p,this.debug=process.env.NODE_ENV==="development"}sanitizeBaseUrl(e){return e.trim().replace(/\/$/,"")}async fetch(e,a){let o=this.baseURL+e,s={...a,headers:{...a?.headers,"Content-Type":a?.headers?.["Content-Type"]??"application/json",authorization:`Bearer ${this.apiKey}`}},h=this.debug;h&&console.debug(`
+Fetching URL: ${o}
+Method: ${s.method||"GET"}${s.body?`
+Body: ${s.body}`:""}
+Headers: ${JSON.stringify(s.headers,null,2)}`);let d=this.retries,u=await this.fetchClient.fetchRetry(o,{...s,retryOn:function(r,c,i){if(r>=d)return!1;let n=i?.status;return c instanceof TypeError||n===f||n!==void 0&&n>=R},retryDelay:function(r,c,i,n){return console.warn(`Fetch attempt #${r}: input=${n}, error=${c?.message}, response status=${i?.status}, response status text=${i?.statusText}`),Math.pow(2,r)*1e3}});return h&&console.debug(`Response for ${o}: ${u.status} ${u.statusText}
+`),u}};export{l as a};
+//# sourceMappingURL=chunk-LOECKABV.js.map

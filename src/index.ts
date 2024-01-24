@@ -91,7 +91,7 @@ class ExperimentItems {
     const { item, startTs } = itemContext;
     const durationMs = Date.now() - startTs;
     await this.client.tracing._flush(item.id);
-    // Completing the experiment item should happen after the traces are 
+    // Completing the experiment item should happen after the traces are
     // flushed, since it will automatically trigger scoring.
     await this.client.fetch(
       `/experiments/${item.experimentId}/items/${item.id}`,
@@ -154,7 +154,7 @@ class Experiments {
     metadata: MetadataType,
   ): Promise<Experiment> {
     const status = ExperimentStatus.RUNNING;
-    const resp = await this.client.fetch("/experiments", {
+    const resp = await this.client.fetch(`/experiments`, {
       method: "POST",
       body: JSON.stringify({
         name,
@@ -164,6 +164,7 @@ class Experiments {
         metadata,
       }),
     });
+
     const data = await resp.json();
     return data.experiment as Experiment;
   }
@@ -216,8 +217,18 @@ class Datasets {
   }
 
   async load(id: DatasetId): Promise<DatasetWithItems> {
-    const resp = await this.client.fetch(`/datasets/${id}`);
-    const data = await resp.json();
+    const resp = await this.client.fetch(`/datasets/${id}`, {
+      method: "GET",
+    });
+
+    let data: { dataset: DatasetWithItems };
+    try {
+      data = await resp.json();
+    } catch (error) {
+      throw new Error(
+        `Failed to parse dataset response as JSON for dataset ID: ${id}: ${error}`,
+      );
+    }
     return data.dataset as DatasetWithItems;
   }
 

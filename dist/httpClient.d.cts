@@ -1,3 +1,5 @@
+import FetchClient from './fetchClient.cjs';
+
 interface HttpClientOptions {
     apiKey: string;
     baseURL: string;
@@ -18,6 +20,9 @@ interface HttpClientOptions {
 declare class HttpClient {
     apiKey: string;
     baseURL: string;
+    fetchClient: FetchClient;
+    debug: boolean;
+    retries: number;
     constructor(opts: HttpClientOptions);
     /**
      * Sanitizes the base URL by trimming whitespace and removing trailing slashes.
@@ -25,22 +30,7 @@ declare class HttpClient {
      * @returns The sanitized base URL.
      */
     private sanitizeBaseUrl;
-    fetch(input: string, init?: RequestInit | undefined, maxRetries?: number, retryDelay?: number): Promise<Response>;
-    private nonTransientError;
-    private delay;
-    private shouldRetry;
-    private isNetworkError;
-    private generateErrorMessage;
-    private attemptFetch;
-    private createHeaders;
-    /**
-     * If the 'Retry-After' header is present in the response, it indicates how long
-     * the client should wait before making a new request.
-     *
-     * If not, we use the retryDelay parameter to determine how long to wait.
-     */
-    private waitForRetry;
-    private calculateRetryDelayForHeaders;
+    fetch(input: string, init?: RequestInit | undefined): Promise<Response>;
 }
 
 export { HttpClient };

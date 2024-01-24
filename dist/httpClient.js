@@ -1,2 +1,2 @@
-import{b as a}from"./chunk-K2DRTD63.js";export{a as HttpClient};
+import{a}from"./chunk-LOECKABV.js";import"./chunk-OXHECJZ4.js";export{a as HttpClient};
 //# sourceMappingURL=httpClient.js.map

@@ -1,4 +1,5 @@
 import { HttpClient } from './httpClient.js';
+import './fetchClient.js';
 
 declare enum ExperimentStatus {
     CREATED = "CREATED",
