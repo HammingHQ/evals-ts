@@ -1,4 +1,4 @@
-import { HttpClient } from "./httpClient";
+import { HttpClient } from "./axiosClient";
 
 export enum ExperimentStatus {
   CREATED = "CREATED",

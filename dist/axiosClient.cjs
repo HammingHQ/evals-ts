@@ -1,0 +1,2 @@
+"use strict";Object.defineProperty(exports, "__esModule", {value: true});var _chunkYRGJMVAMcjs = require('./chunk-YRGJMVAM.cjs');require('./chunk-7ARU3YXQ.cjs');exports.HttpClient = _chunkYRGJMVAMcjs.a;
+//# sourceMappingURL=axiosClient.cjs.map
