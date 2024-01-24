@@ -26,12 +26,13 @@ export class HttpClient {
   baseURL: string;
   fetchClient: FetchClient;
   debug: boolean = false;
+  retries: number = 3;
 
   constructor(opts: HttpClientOptions) {
     this.apiKey = opts.apiKey;
     this.baseURL = this.sanitizeBaseUrl(opts.baseURL);
     this.fetchClient = new FetchClient();
-    this.debug = process.env.NODE_ENV === "development";
+    this.debug = process.env.NODE_ENV === "development" ?? false;
   }
 
   /**
@@ -51,12 +52,30 @@ export class HttpClient {
 
     const finalInit = {
       ...init,
-      headers: { authorization: `Bearer ${this.apiKey}` },
+      headers: {
+        ...init?.headers,
+        "Content-Type": init?.headers?.["Content-Type"] ?? "application/json",
+        authorization: `Bearer ${this.apiKey}`,
+      },
     };
+
+    const MAX_ATTEMPTS = this.retries;
+    const IS_DEBUG = this.debug;
+
+    if (IS_DEBUG) {
+      console.debug(`Fetching URL: ${url}`);
+      console.debug(`Method: ${finalInit.method || "GET"}`);
+      if (finalInit.body) {
+        console.debug(`Body: ${finalInit.body}`);
+      }
+      console.debug(`Headers: ${JSON.stringify(finalInit.headers, null, 2)}`);
+    }
 
     const resp = await this.fetchClient.fetchRetry(url, {
       ...finalInit,
       retryOn: function (attempt, error, response) {
+        if (attempt >= MAX_ATTEMPTS) return false;
+
         // Retry on too many requests, internal server error, or TypeError
         const status = response?.status;
 
@@ -67,14 +86,18 @@ export class HttpClient {
         );
       },
       retryDelay: function (attempt, error, response, input) {
-        if (this.debug) {
-          console.log(
-            `Attempt input: ${input}, #${attempt}, error=${error}, response=${response}`,
+        if (IS_DEBUG) {
+          console.debug(
+            `Fetch attempt #${attempt}: input=${input}, error=${error?.message}, response status=${response?.status}, response status text=${response?.statusText}`,
           );
         }
         return Math.pow(2, attempt) * 1000;
       },
     });
+
+    if (IS_DEBUG) {
+      console.debug(`Response for ${url}: ${resp.status} ${resp.statusText}`);
+    }
 
     return resp;
   }

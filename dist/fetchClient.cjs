@@ -1,0 +1,2 @@
+"use strict";Object.defineProperty(exports, "__esModule", {value: true});var _chunkE6B7PIIGcjs = require('./chunk-E6B7PIIG.cjs');exports.default = _chunkE6B7PIIGcjs.b;
+//# sourceMappingURL=fetchClient.cjs.map
