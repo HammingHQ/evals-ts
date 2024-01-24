@@ -1,2 +1,2 @@
-"use strict";Object.defineProperty(exports, "__esModule", {value: true});var _chunkSPLLRYSXcjs = require('./chunk-SPLLRYSX.cjs');require('./chunk-E6B7PIIG.cjs');exports.HttpClient = _chunkSPLLRYSXcjs.a;
+"use strict";Object.defineProperty(exports, "__esModule", {value: true});var _chunkCSABNXX3cjs = require('./chunk-CSABNXX3.cjs');require('./chunk-E6B7PIIG.cjs');exports.HttpClient = _chunkCSABNXX3cjs.a;
 //# sourceMappingURL=httpClient.cjs.map

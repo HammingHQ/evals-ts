@@ -63,6 +63,7 @@ export class HttpClient {
     const IS_DEBUG = this.debug;
 
     if (IS_DEBUG) {
+      console.log("\n");
       console.debug(`Fetching URL: ${url}`);
       console.debug(`Method: ${finalInit.method || "GET"}`);
       if (finalInit.body) {
@@ -97,6 +98,7 @@ export class HttpClient {
 
     if (IS_DEBUG) {
       console.debug(`Response for ${url}: ${resp.status} ${resp.statusText}`);
+      console.debug("\n");
     }
 
     return resp;
