@@ -79,7 +79,8 @@ declare enum ScoreType {
     ContextRecall = "context_recall",
     ContextPrecision = "context_precision",
     Hallucination = "hallucination",
-    StringDiff = "string_diff"
+    StringDiff = "string_diff",
+    Refusal = "refusal"
 }
 declare const DefaultScoreTypes: ScoreType[];
 declare class Datasets {

@@ -205,6 +205,7 @@ export enum ScoreType {
   ContextPrecision = "context_precision",
   Hallucination = "hallucination",
   StringDiff = "string_diff",
+  Refusal = "refusal",
 }
 
 export const DefaultScoreTypes = [ScoreType.StringDiff];
