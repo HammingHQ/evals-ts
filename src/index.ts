@@ -35,8 +35,8 @@ export interface ExperimentItemContext {
   startTs: number;
 }
 
-export type InputType = { query: string } & Record<string, any>;
-export type OutputType = { response?: string } & Record<string, any>;
+export type InputType = Record<string, any>;
+export type OutputType = Record<string, any>;
 export type MetadataType = Record<string, any>;
 
 export interface DatasetItemValue {
