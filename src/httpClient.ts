@@ -32,7 +32,7 @@ export class HttpClient {
     this.apiKey = opts.apiKey;
     this.baseURL = this.sanitizeBaseUrl(opts.baseURL);
     this.fetchClient = new FetchClient();
-    this.debug = process.env.NODE_ENV === "development" ?? false;
+    this.debug = process.env.NODE_ENV === "development";
   }
 
   /**
