@@ -4,4 +4,4 @@ Method: ${s.method||"GET"}${s.body?`
 Body: ${s.body}`:""}
 Headers: ${JSON.stringify(s.headers,null,2)}`);let d=this.retries,u=await this.fetchClient.fetchRetry(o,{...s,retryOn:function(r,c,i){if(r>=d)return!1;let n=_optionalChain([i, 'optionalAccess', _4 => _4.status]);return c instanceof TypeError||n===f||n!==void 0&&n>=R},retryDelay:function(r,c,i,n){return console.warn(`Fetch attempt #${r}: input=${n}, error=${_optionalChain([c, 'optionalAccess', _5 => _5.message])}, response status=${_optionalChain([i, 'optionalAccess', _6 => _6.status])}, response status text=${_optionalChain([i, 'optionalAccess', _7 => _7.statusText])}`),Math.pow(2,r)*1e3}});return h&&console.debug(`Response for ${o}: ${u.status} ${u.statusText}
 `),u}};exports.a = l;
-//# sourceMappingURL=chunk-MSJTB2PG.cjs.map
+//# sourceMappingURL=chunk-A7QSZYK6.cjs.map

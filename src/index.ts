@@ -35,8 +35,8 @@ export interface ExperimentItemContext {
   startTs: number;
 }
 
-export type InputType = { query: string } & Record<string, any>;
-export type OutputType = { response?: string } & Record<string, any>;
+export type InputType = Record<string, any>;
+export type OutputType = Record<string, any>;
 export type MetadataType = Record<string, any>;
 
 export interface DatasetItemValue {
@@ -143,8 +143,8 @@ class Experiments {
     } finally {
       await this.end(experiment);
       console.log("See experiment results at:", experimentUrl);
-      return { experimentUrl };
     }
+    return { experimentUrl };
   }
 
   private async start(
@@ -206,6 +206,7 @@ export enum ScoreType {
   Hallucination = "hallucination",
   StringDiff = "string_diff",
   Refusal = "refusal",
+  SqlAst = "sql_ast",
 }
 
 export const DefaultScoreTypes = [ScoreType.StringDiff];

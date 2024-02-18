@@ -31,12 +31,8 @@ interface ExperimentItemContext {
     item: ExperimentItem;
     startTs: number;
 }
-type InputType = {
-    query: string;
-} & Record<string, any>;
-type OutputType = {
-    response?: string;
-} & Record<string, any>;
+type InputType = Record<string, any>;
+type OutputType = Record<string, any>;
 type MetadataType = Record<string, any>;
 interface DatasetItemValue {
     input: InputType;
@@ -80,7 +76,8 @@ declare enum ScoreType {
     ContextPrecision = "context_precision",
     Hallucination = "hallucination",
     StringDiff = "string_diff",
-    Refusal = "refusal"
+    Refusal = "refusal",
+    SqlAst = "sql_ast"
 }
 declare const DefaultScoreTypes: ScoreType[];
 declare class Datasets {
