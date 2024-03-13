@@ -1,2 +1,2 @@
-"use strict";Object.defineProperty(exports, "__esModule", {value: true});var _chunkE6B7PIIGcjs = require('./chunk-E6B7PIIG.cjs');exports.default = _chunkE6B7PIIGcjs.b;
+"use strict";Object.defineProperty(exports, "__esModule", {value: true});var _chunkJG6LIMBVcjs = require('./chunk-JG6LIMBV.cjs');require('./chunk-7ARU3YXQ.cjs');exports.default = _chunkJG6LIMBVcjs.a;
 //# sourceMappingURL=fetchClient.cjs.map

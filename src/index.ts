@@ -1,4 +1,5 @@
 import { HttpClient } from "./httpClient";
+import { runWorkers } from "./worker";
 
 export enum ExperimentStatus {
   CREATED = "CREATED",
@@ -132,10 +133,21 @@ class Experiments {
     const experimentUrl = `${baseUrl.origin}/experiments/${experiment.id}`;
 
     try {
-      for (const datasetItem of dataset.items) {
-        const itemContext = await this.items.start(experiment, datasetItem);
-        const output = await run(datasetItem.input);
-        await this.items.end(itemContext, output);
+      if (opts.parallel) {
+        const runFn = async (item: DatasetItem) => {
+          const itemContext = await this.items.start(experiment, item);
+          const output = await run(item.input);
+          await this.items.end(itemContext, output);
+        };
+        const workerCount =
+          typeof opts.parallel === "number" ? opts.parallel : undefined;
+        await runWorkers(dataset.items, runFn, workerCount);
+      } else {
+        for (const datasetItem of dataset.items) {
+          const itemContext = await this.items.start(experiment, datasetItem);
+          const output = await run(datasetItem.input);
+          await this.items.end(itemContext, output);
+        }
       }
     } catch (err) {
       await this.end(experiment, ExperimentStatus.FAILED);
@@ -194,6 +206,7 @@ interface RunOptions {
   name?: string;
   scoring?: ScoreType[];
   metadata?: MetadataType;
+  parallel?: boolean | number;
 }
 
 export type Runner = (input: InputType) => Promise<OutputType>;

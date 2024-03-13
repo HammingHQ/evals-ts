@@ -1,2 +1,2 @@
-import{b as a}from"./chunk-OXHECJZ4.js";export{a as default};
+import{a}from"./chunk-TZ55H3QO.js";import"./chunk-GQSCBKA6.js";export{a as default};
 //# sourceMappingURL=fetchClient.js.map
