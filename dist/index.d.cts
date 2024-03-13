@@ -67,6 +67,7 @@ interface RunOptions {
     name?: string;
     scoring?: ScoreType[];
     metadata?: MetadataType;
+    parallel?: boolean | number;
 }
 type Runner = (input: InputType) => Promise<OutputType>;
 declare enum ScoreType {
