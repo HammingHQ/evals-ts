@@ -24,6 +24,7 @@ interface ExperimentItem {
     id: string;
     experimentId: string;
     datasetItemId: string;
+    sampleId: number;
     output: OutputType;
     metrics: ExperimentItemMetrics;
 }
@@ -68,6 +69,7 @@ interface RunOptions {
     scoring?: ScoreType[];
     metadata?: MetadataType;
     parallel?: boolean | number;
+    sampling?: number;
 }
 type Runner = (input: InputType) => Promise<OutputType>;
 declare enum ScoreType {
