@@ -5,7 +5,7 @@ import { HttpClient } from "./resources/HttpClient";
 import { Monitoring } from "./resources/Monitoring";
 import { Tracing } from "./resources/Tracing";
 
-export type { ScoreType } from "./types/types";
+export { ScoreType } from "./types/types";
 
 export interface ClientOptions {
   apiKey: string;
