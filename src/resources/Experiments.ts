@@ -6,6 +6,7 @@ import {
   ExperimentItemContext,
   ExperimentStatus,
   Runner,
+  RunOptions,
 } from "../types/experiments";
 import { TracingMode } from "../types/tracing";
 import {
@@ -15,14 +16,6 @@ import {
   ScoreType,
 } from "../types/types";
 import { runWorkers } from "../utils/worker";
-
-interface RunOptions {
-  dataset: DatasetId;
-  name?: string;
-  scoring?: ScoreType[];
-  metadata?: MetadataType;
-  parallel?: boolean | number;
-}
 
 class ExperimentItems {
   private client: Hamming;
