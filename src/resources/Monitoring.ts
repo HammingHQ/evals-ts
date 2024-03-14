@@ -22,10 +22,10 @@ export class MonitoringItem {
   errorMessage: string | undefined;
   startTs: number;
 
-  constructor(monitoring: Monitoring, session_id: string, seq_id: number) {
+  constructor(monitoring: Monitoring, sessionId: string, seqId: number) {
     this.monitoring = monitoring;
-    this.sessionId = session_id;
-    this.seqId = seq_id;
+    this.sessionId = sessionId;
+    this.seqId = seqId;
     this.metrics = {};
   }
 
@@ -86,6 +86,7 @@ export class MonitoringItem {
 
 export class Monitoring {
   private client: Hamming;
+
   private session: MonitoringSession | undefined;
   private currentItem: MonitoringItem | undefined;
 
