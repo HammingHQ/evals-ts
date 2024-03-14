@@ -26,12 +26,14 @@ export class AsyncLogger {
   }
 
   async start(): Promise<void> {
+    console.log("Starting logger thread..");
     while (!this.stopEvent) {
       await this.queueNotEmptyEvent.wait();
       if (!this.stopEvent) {
         await this._process_queue();
       }
     }
+    console.log("Logger thread exited!");
   }
 
   stop(): void {
@@ -64,7 +66,6 @@ export class AsyncLogger {
 
   private async _publish(msgs: LogMessage[]): Promise<void> {
     console.log(`Publishing ${msgs.length} messages..`);
-    console.log(`Messages: ${JSON.stringify(msgs)}`);
     try {
       await this.client.fetch("/logs", {
         method: "POST",
