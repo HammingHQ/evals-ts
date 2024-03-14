@@ -30,7 +30,7 @@ export class AsyncLogger {
     while (!this.stopEvent) {
       await this.queueNotEmptyEvent.wait();
       if (!this.stopEvent) {
-        await this._process_queue();
+        await this._processQueue();
       }
     }
     console.log("Logger thread exited!");
@@ -41,19 +41,16 @@ export class AsyncLogger {
     this.stopEvent = true;
   }
 
-  private _drain_queue(): LogMessage[] {
-    const drained_msgs: LogMessage[] = [];
-    while (this.queue.length > 0 && drained_msgs.length < LOG_BATCH_SIZE) {
-      const msg = this.queue.shift();
-      if (msg !== undefined) {
-        drained_msgs.push(msg);
-      }
-    }
-    return drained_msgs;
+  private _drainQueue(): LogMessage[] {
+    const batchSize = Math.min(this.queue.length, LOG_BATCH_SIZE);
+
+    const drainedMessages = this.queue.splice(0, batchSize);
+
+    return drainedMessages;
   }
 
-  private async _process_queue(): Promise<void> {
-    const msgs_to_process: LogMessage[] = this._drain_queue();
+  private async _processQueue(): Promise<void> {
+    const msgs_to_process: LogMessage[] = this._drainQueue();
 
     await this._publish(msgs_to_process);
 
