@@ -1,0 +1,1 @@
+{"version":3,"sources":["../src/types/asyncLogger.ts"],"names":["LogMessageType"],"mappings":"AAEO,IAAKA,OACVA,IAAA,WAAa,GAAb,aADUA,OAAA","sourcesContent":["import type { MonitoringTrace } from \"./monitoring\";\n\nexport enum LogMessageType {\n  MONITORING = 1,\n}\n\nexport interface LogMessage {\n  type: LogMessageType;\n  payload?: MonitoringTrace;\n}\n"]}

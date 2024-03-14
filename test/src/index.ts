@@ -1,6 +1,6 @@
+import dotenv from "dotenv";
 import { envsafe, str } from "envsafe";
 import { Hamming, ScoreType } from "hamming-sdk";
-import dotenv from "dotenv";
 // import { createLargeDataset } from "./dataset";
 
 dotenv.config();
@@ -167,9 +167,61 @@ async function runExperiment() {
   );
 }
 
+async function runExperimentWithMonitoring() {
+  hamming.monitoring.start();
+
+  for (let i = 0; i < 1; i++) {
+    const item = hamming.monitoring.startItem();
+
+    const question = "What are the travel restrictions in France?";
+
+    item.setInput({ question });
+    item.setMetadata({ category: "travel" });
+
+    hamming.tracing.log({ text: "fast log" });
+
+    hamming.tracing.logRetrieval({
+      query: "tour guides for France",
+      results: [
+        "France is a really nice place",
+        "You can travel to Paris to see the Eiffel Tower",
+        "You can travel freely in France",
+      ],
+
+      metadata: {
+        engine: "chroma",
+      },
+    });
+
+    hamming.tracing.logGeneration({
+      input: "What are the travel restrictions in France?",
+      output: "You can travel freely in France",
+      metadata: {
+        model: "GPT-3",
+      },
+    });
+
+    // const model = "gpt-3.5-turbo";
+    // const messages = [
+    //   { role: "system", content: "You are a helpful assistant." },
+    //   {
+    //     role: "user",
+    //     content: "What are the travel restrictions in France?",
+    //   },
+    // ];
+
+    const response = "You can travel freely in France.";
+
+    item.setOutput({ answer: response });
+  }
+
+  hamming.monitoring.stop();
+}
+
 async function run() {
   // await createLargeDataset(hamming, 1000);
   await runExperiment();
+  // await runExperimentWithMonitoring();
   // await simpleRagExample();
 }
 
