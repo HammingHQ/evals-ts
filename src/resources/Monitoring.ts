@@ -126,6 +126,8 @@ export class Monitoring {
     } catch (error) {
       item._end(true, error.message);
       throw error;
+    } finally {
+      this._getTraceContext = originalGetTraceContext;
     }
   }
 
