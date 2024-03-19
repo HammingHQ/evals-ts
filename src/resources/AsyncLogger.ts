@@ -15,7 +15,6 @@ export class AsyncLogger {
     this.client = client;
 
     this.queue = [];
-    this.queue = [];
     this.stopEvent = false;
     this.queueNotEmptyEvent = new ManualResetEvent();
   }
@@ -29,9 +28,7 @@ export class AsyncLogger {
     console.log("Starting logger thread..");
     while (!this.stopEvent) {
       await this.queueNotEmptyEvent.wait();
-      if (!this.stopEvent) {
-        await this._processQueue();
-      }
+      await this._processQueue();
     }
     console.log("Logger thread exited!");
   }
@@ -54,11 +51,7 @@ export class AsyncLogger {
 
     await this._publish(msgs_to_process);
 
-    if (this.queue.length > 0) {
-      this.queueNotEmptyEvent.set();
-    } else {
-      this.queueNotEmptyEvent.reset();
-    }
+    if (this.queue.length === 0) this.queueNotEmptyEvent.reset();
   }
 
   private async _publish(msgs: LogMessage[]): Promise<void> {

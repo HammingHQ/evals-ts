@@ -72,7 +72,7 @@ export class MonitoringItem {
       seqId: this.seqId,
       parentSeqId: undefined,
       event: {
-        kind: "monitoring",
+        kind: "root",
         input: this.input,
         output: this.output,
         metadata: this.metadata,
@@ -86,9 +86,7 @@ export class MonitoringItem {
 
 export class Monitoring {
   private client: Hamming;
-
-  private session: MonitoringSession | undefined;
-  private currentItem: MonitoringItem | undefined;
+  private session: MonitoringSession | null;
 
   constructor(client: Hamming) {
     this.client = client;
@@ -105,35 +103,45 @@ export class Monitoring {
   }
 
   stop() {
-    this.session = undefined;
+    this.session = null;
     this.client.tracing._setMode(TracingMode.OFF);
   }
 
-  startItem(input?: InputType, metadata?: MetadataType) {
+  async runItem(
+    callback: (item: MonitoringItem) => unknown | Promise<unknown>,
+  ): Promise<unknown> {
     const [sessionId, seqId] = this._nextSeqId();
 
     const item = new MonitoringItem(this, sessionId, seqId);
-    item._start(input, metadata);
-    this.currentItem = item;
-    return item;
+    item._start();
+
+    const originalGetTraceContext = this._getTraceContext;
+    this._getTraceContext = () => originalGetTraceContext.call(this, item);
+
+    try {
+      const response = await callback(item);
+      item._end();
+
+      return response;
+    } catch (error) {
+      item._end(true, error.message);
+      throw error;
+    }
   }
 
   _endItem(trace: MonitoringTrace) {
-    this.currentItem = undefined;
     this.client.tracing._logLiveTrace(trace);
   }
 
-  _getTraceContext(): MonitoringTraceContext {
+  _getTraceContext(item?: MonitoringItem): MonitoringTraceContext {
     if (!this.session) throw Error("Monitoring not started");
-
-    const currentItem = this.currentItem;
 
     const [sessionId, seqId] = this._nextSeqId();
 
     return {
       sessionId,
       seqId,
-      parentSeqId: currentItem?.seqId,
+      parentSeqId: item?.seqId,
     };
   }
 

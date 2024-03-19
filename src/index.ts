@@ -35,7 +35,7 @@ export class Hamming extends HttpClient {
       baseURL: config.baseURL ?? "https://app.hamming.ai/api/rest",
     });
 
-    this.logger.start();
+    this._logger.start();
   }
 
   experiments = new Experiments(this);
@@ -43,5 +43,5 @@ export class Hamming extends HttpClient {
   tracing = new Tracing(this);
   monitoring = new Monitoring(this);
 
-  logger = new AsyncLogger(this);
+  _logger = new AsyncLogger(this);
 }

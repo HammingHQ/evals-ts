@@ -96,7 +96,7 @@ export class Tracing {
       return;
     }
 
-    this.client.logger.log({
+    this.client._logger.log({
       type: LogMessageType.MONITORING,
       payload: trace,
     });
