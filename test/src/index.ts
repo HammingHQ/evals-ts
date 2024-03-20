@@ -1,5 +1,5 @@
 import { envsafe, str } from "envsafe";
-import { Hamming, ScoreType } from "hamming-sdk";
+import { Hamming, ScoreType } from "@hamming/hamming-sdk";
 import dotenv from "dotenv";
 // import { createLargeDataset } from "./dataset";
 

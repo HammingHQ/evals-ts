@@ -69,7 +69,10 @@ interface RunOptions {
     metadata?: MetadataType;
     parallel?: boolean | number;
 }
-type Runner = (input: InputType) => Promise<OutputType>;
+type RunContext = {
+    tracing: ITracing;
+};
+type Runner = (input: InputType, ctx: RunContext) => Promise<OutputType>;
 declare enum ScoreType {
     AccuracyAI = "accuracy_ai",
     FactsCompare = "facts_compare",
@@ -105,14 +108,20 @@ interface Document {
     pageContent: string;
     metadata: Record<string, any>;
 }
-interface RetrievalEventParams {
+interface RetrievalParams {
     query?: string;
     results?: Document[] | string[];
     metadata?: {
         engine?: string;
     };
 }
-declare class Tracing {
+interface ITracing {
+    logGeneration(params: GenerationParams): void;
+    logRetrieval(params: RetrievalParams): void;
+    log(key: string, value: unknown): void;
+    log(trace: TraceEvent): void;
+}
+declare class Tracing implements ITracing {
     private client;
     private collected;
     private currentLocalTraceId;
@@ -121,10 +130,15 @@ declare class Tracing {
     _flush(experimentItemId: string): Promise<void>;
     private _generationEvent;
     private _retrievalEvent;
-    log(key: string, value: unknown): void;
-    log(trace: TraceEvent): void;
-    logGeneration(params: GenerationParams): void;
-    logRetrieval(params: RetrievalEventParams): void;
+    log(key: string, value: unknown, ctx?: TracingContext): void;
+    log(trace: TraceEvent, ctx?: TracingContext): void;
+    logGeneration(params: GenerationParams, ctx?: TracingContext): void;
+    logRetrieval(params: RetrievalParams, ctx?: TracingContext): void;
+}
+interface TracingContext {
+    experiment?: {
+        itemId?: string;
+    };
 }
 interface ClientOptions {
     apiKey: string;
@@ -137,4 +151,4 @@ declare class Hamming extends HttpClient {
     tracing: Tracing;
 }
 
-export { type ClientOptions, type CreateDatasetOptions, type DatasetId, type DatasetItemValue, DefaultScoreTypes, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, Hamming, type InputType, type MetadataType, type OutputType, type Runner, ScoreType };
+export { type ClientOptions, type CreateDatasetOptions, type DatasetId, type DatasetItemValue, DefaultScoreTypes, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, Hamming, type InputType, type MetadataType, type OutputType, type RunContext, type Runner, ScoreType };
