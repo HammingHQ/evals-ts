@@ -135,18 +135,24 @@ class Experiments {
     try {
       if (opts.parallel) {
         const runFn = async (item: DatasetItem) => {
-          const itemContext = await this.items.start(experiment, item);
-          const output = await run(item.input);
-          await this.items.end(itemContext, output);
+          const itemCtx = await this.items.start(experiment, item);
+          const runCtx: RunContext = {
+            tracing: new TracingWrapper(this.client.tracing, itemCtx.item.id),
+          };
+          const output = await run(item.input, runCtx);
+          await this.items.end(itemCtx, output);
         };
         const workerCount =
           typeof opts.parallel === "number" ? opts.parallel : undefined;
         await runWorkers(dataset.items, runFn, workerCount);
       } else {
         for (const datasetItem of dataset.items) {
-          const itemContext = await this.items.start(experiment, datasetItem);
-          const output = await run(datasetItem.input);
-          await this.items.end(itemContext, output);
+          const itemCtx = await this.items.start(experiment, datasetItem);
+          const runCtx: RunContext = {
+            tracing: new TracingWrapper(this.client.tracing, itemCtx.item.id),
+          };
+          const output = await run(datasetItem.input, runCtx);
+          await this.items.end(itemCtx, output);
         }
       }
     } catch (err) {
@@ -209,7 +215,11 @@ interface RunOptions {
   parallel?: boolean | number;
 }
 
-export type Runner = (input: InputType) => Promise<OutputType>;
+export type RunContext = {
+  tracing: ITracing;
+};
+
+export type Runner = (input: InputType, ctx: RunContext) => Promise<OutputType>;
 
 export enum ScoreType {
   AccuracyAI = "accuracy_ai",
@@ -289,7 +299,7 @@ interface Document {
   metadata: Record<string, any>;
 }
 
-interface RetrievalEventParams {
+interface RetrievalParams {
   query?: string;
   results?: Document[] | string[];
   metadata?: {
@@ -304,9 +314,16 @@ interface Trace {
   event: TraceEvent;
 }
 
-class Tracing {
+interface ITracing {
+  logGeneration(params: GenerationParams): void;
+  logRetrieval(params: RetrievalParams): void;
+  log(key: string, value: unknown): void;
+  log(trace: TraceEvent): void;
+}
+
+class Tracing implements ITracing {
   private client: Hamming;
-  private collected: TraceEvent[] = [];
+  private collected: Record<string, TraceEvent[]> = {};
   private currentLocalTraceId: number = 0;
 
   constructor(client: Hamming) {
@@ -318,8 +335,8 @@ class Tracing {
   }
 
   async _flush(experimentItemId: string) {
-    const events = this.collected;
-    this.collected = [];
+    const events = this.collected[experimentItemId] ?? [];
+    delete this.collected[experimentItemId];
 
     const rootTrace: Trace = {
       id: this.nextTraceId(),
@@ -353,7 +370,7 @@ class Tracing {
     };
   }
 
-  private _retrievalEvent(params: RetrievalEventParams): TraceEvent {
+  private _retrievalEvent(params: RetrievalParams): TraceEvent {
     const isString = (item: any) => typeof item === "string";
     const hasStringResults = params.results?.every(isString);
     const normalizeResult = (result: string | Document): Document => {
@@ -374,22 +391,80 @@ class Tracing {
     };
   }
 
-  log(key: string, value: unknown): void;
-  log(trace: TraceEvent): void;
-  log(keyOrTrace: string | TraceEvent, value?: unknown): void {
-    if (typeof keyOrTrace === "string") {
-      this.collected.push({ [keyOrTrace]: value });
-    } else {
-      this.collected.push(keyOrTrace);
+  log(key: string, value: unknown, ctx?: TracingContext): void;
+  log(trace: TraceEvent, ctx?: TracingContext): void;
+  log(
+    keyOrTrace: string | TraceEvent,
+    valueOrCtx?: unknown | TracingContext,
+    ctx?: TracingContext,
+  ): void {
+    const { event, tracingCtx } = (() => {
+      const isKeyValue = typeof keyOrTrace === "string";
+      if (isKeyValue) {
+        const key = keyOrTrace as string;
+        const value = valueOrCtx as unknown;
+        const event: TraceEvent = { [key]: value };
+        const tracingCtx = ctx;
+        return { event, tracingCtx };
+      } else {
+        const event = keyOrTrace as TraceEvent;
+        const tracingCtx = valueOrCtx as TracingContext;
+        return { event, tracingCtx };
+      }
+    })();
+
+    const experimentItemId = tracingCtx?.experiment?.itemId;
+    if (!experimentItemId) {
+      throw new Error(
+        "Experiment item ID not found, use the new API 'ctx.tracing'.",
+      );
     }
+    if (!this.collected[experimentItemId]) {
+      this.collected[experimentItemId] = [];
+    }
+    this.collected[experimentItemId].push(event);
+  }
+
+  logGeneration(params: GenerationParams, ctx?: TracingContext): void {
+    this.log(this._generationEvent(params), ctx);
+  }
+
+  logRetrieval(params: RetrievalParams, ctx?: TracingContext): void {
+    this.log(this._retrievalEvent(params), ctx);
+  }
+}
+
+interface TracingContext {
+  experiment?: {
+    itemId?: string;
+  };
+}
+
+class TracingWrapper implements ITracing {
+  private wrapped: Tracing;
+  private ctx: TracingContext;
+
+  constructor(tracing: Tracing, experimentItemId: string) {
+    this.wrapped = tracing;
+    this.ctx = {
+      experiment: { itemId: experimentItemId },
+    };
   }
 
   logGeneration(params: GenerationParams): void {
-    this.log(this._generationEvent(params));
+    this.wrapped.logGeneration(params, this.ctx);
   }
 
-  logRetrieval(params: RetrievalEventParams): void {
-    this.log(this._retrievalEvent(params));
+  logRetrieval(params: RetrievalParams): void {
+    this.wrapped.logRetrieval(params, this.ctx);
+  }
+
+  log(keyOrTrace: string | TraceEvent, value?: unknown): void {
+    if (typeof keyOrTrace === "string") {
+      this.wrapped.log(keyOrTrace, value, this.ctx);
+    } else {
+      this.wrapped.log(keyOrTrace, this.ctx);
+    }
   }
 }
 

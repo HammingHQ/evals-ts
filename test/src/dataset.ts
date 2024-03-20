@@ -1,4 +1,4 @@
-import { Hamming } from "hamming-sdk";
+import { Hamming } from "@hamming/hamming-sdk";
 
 enum MetadataKey {
   Category = "category",
