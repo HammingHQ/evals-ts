@@ -1,5 +1,6 @@
 import { HttpClient } from "./httpClient";
 import { runWorkers } from "./worker";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 export enum ExperimentStatus {
   CREATED = "CREATED",
@@ -136,10 +137,10 @@ class Experiments {
       if (opts.parallel) {
         const runFn = async (item: DatasetItem) => {
           const itemCtx = await this.items.start(experiment, item);
-          const runCtx: RunContext = {
-            tracing: new TracingWrapper(this.client.tracing, itemCtx.item.id),
-          };
-          const output = await run(item.input, runCtx);
+          const output = await asyncRunContext.run(
+            newRunContext(itemCtx.item.id),
+            async () => run(item.input),
+          );
           await this.items.end(itemCtx, output);
         };
         const workerCount =
@@ -148,10 +149,10 @@ class Experiments {
       } else {
         for (const datasetItem of dataset.items) {
           const itemCtx = await this.items.start(experiment, datasetItem);
-          const runCtx: RunContext = {
-            tracing: new TracingWrapper(this.client.tracing, itemCtx.item.id),
-          };
-          const output = await run(datasetItem.input, runCtx);
+          const output = await asyncRunContext.run(
+            newRunContext(itemCtx.item.id),
+            async () => await run(datasetItem.input),
+          );
           await this.items.end(itemCtx, output);
         }
       }
@@ -216,10 +217,22 @@ interface RunOptions {
 }
 
 export type RunContext = {
-  tracing: ITracing;
+  tracing: TracingContext;
 };
 
-export type Runner = (input: InputType, ctx: RunContext) => Promise<OutputType>;
+function newRunContext(itemId: string): RunContext {
+  return {
+    tracing: {
+      experiment: {
+        itemId,
+      },
+    },
+  };
+}
+
+export type Runner = (input: InputType) => Promise<OutputType>;
+
+const asyncRunContext = new AsyncLocalStorage<RunContext>();
 
 export enum ScoreType {
   AccuracyAI = "accuracy_ai",
@@ -391,46 +404,40 @@ class Tracing implements ITracing {
     };
   }
 
-  log(key: string, value: unknown, ctx?: TracingContext): void;
-  log(trace: TraceEvent, ctx?: TracingContext): void;
-  log(
-    keyOrTrace: string | TraceEvent,
-    valueOrCtx?: unknown | TracingContext,
-    ctx?: TracingContext,
-  ): void {
-    const { event, tracingCtx } = (() => {
+  log(key: string, value: unknown): void;
+  log(trace: TraceEvent): void;
+  log(keyOrTrace: string | TraceEvent, value?: unknown): void {
+    const event = (() => {
       const isKeyValue = typeof keyOrTrace === "string";
       if (isKeyValue) {
         const key = keyOrTrace as string;
-        const value = valueOrCtx as unknown;
         const event: TraceEvent = { [key]: value };
-        const tracingCtx = ctx;
-        return { event, tracingCtx };
+        return event;
       } else {
         const event = keyOrTrace as TraceEvent;
-        const tracingCtx = valueOrCtx as TracingContext;
-        return { event, tracingCtx };
+        return event;
       }
     })();
 
-    const experimentItemId = tracingCtx?.experiment?.itemId;
-    if (!experimentItemId) {
-      throw new Error(
-        "Experiment item ID not found, use the new API 'ctx.tracing'.",
-      );
+    const runCtx = asyncRunContext.getStore();
+    const itemId = runCtx?.tracing?.experiment?.itemId;
+
+    if (!itemId) {
+      console.error("Unable to log trace event without experiment item ID.");
+      return;
     }
-    if (!this.collected[experimentItemId]) {
-      this.collected[experimentItemId] = [];
+    if (!this.collected[itemId]) {
+      this.collected[itemId] = [];
     }
-    this.collected[experimentItemId].push(event);
+    this.collected[itemId].push(event);
   }
 
-  logGeneration(params: GenerationParams, ctx?: TracingContext): void {
-    this.log(this._generationEvent(params), ctx);
+  logGeneration(params: GenerationParams): void {
+    this.log(this._generationEvent(params));
   }
 
-  logRetrieval(params: RetrievalParams, ctx?: TracingContext): void {
-    this.log(this._retrievalEvent(params), ctx);
+  logRetrieval(params: RetrievalParams): void {
+    this.log(this._retrievalEvent(params));
   }
 }
 
@@ -438,34 +445,6 @@ interface TracingContext {
   experiment?: {
     itemId?: string;
   };
-}
-
-class TracingWrapper implements ITracing {
-  private wrapped: Tracing;
-  private ctx: TracingContext;
-
-  constructor(tracing: Tracing, experimentItemId: string) {
-    this.wrapped = tracing;
-    this.ctx = {
-      experiment: { itemId: experimentItemId },
-    };
-  }
-
-  logGeneration(params: GenerationParams): void {
-    this.wrapped.logGeneration(params, this.ctx);
-  }
-
-  logRetrieval(params: RetrievalParams): void {
-    this.wrapped.logRetrieval(params, this.ctx);
-  }
-
-  log(keyOrTrace: string | TraceEvent, value?: unknown): void {
-    if (typeof keyOrTrace === "string") {
-      this.wrapped.log(keyOrTrace, value, this.ctx);
-    } else {
-      this.wrapped.log(keyOrTrace, this.ctx);
-    }
-  }
 }
 
 export interface ClientOptions {

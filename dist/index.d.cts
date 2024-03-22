@@ -70,9 +70,9 @@ interface RunOptions {
     parallel?: boolean | number;
 }
 type RunContext = {
-    tracing: ITracing;
+    tracing: TracingContext;
 };
-type Runner = (input: InputType, ctx: RunContext) => Promise<OutputType>;
+type Runner = (input: InputType) => Promise<OutputType>;
 declare enum ScoreType {
     AccuracyAI = "accuracy_ai",
     FactsCompare = "facts_compare",
@@ -130,10 +130,10 @@ declare class Tracing implements ITracing {
     _flush(experimentItemId: string): Promise<void>;
     private _generationEvent;
     private _retrievalEvent;
-    log(key: string, value: unknown, ctx?: TracingContext): void;
-    log(trace: TraceEvent, ctx?: TracingContext): void;
-    logGeneration(params: GenerationParams, ctx?: TracingContext): void;
-    logRetrieval(params: RetrievalParams, ctx?: TracingContext): void;
+    log(key: string, value: unknown): void;
+    log(trace: TraceEvent): void;
+    logGeneration(params: GenerationParams): void;
+    logRetrieval(params: RetrievalParams): void;
 }
 interface TracingContext {
     experiment?: {
