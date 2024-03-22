@@ -7,8 +7,9 @@ import {
   MonitoringTrace,
   MonitoringTraceContext,
 } from "../types/monitoring";
-import { TracingMode } from "../types/tracing";
+import { ITracing, TracingMode } from "../types/tracing";
 import { InputType, MetadataType, OutputType } from "../types/types";
+import { TracingWrapper } from "./Tracing";
 
 export class MonitoringItem {
   monitoring: Monitoring;
@@ -22,8 +23,14 @@ export class MonitoringItem {
   errorMessage: string | undefined;
   startTs: number;
 
+  tracing: ITracing;
+
   constructor(monitoring: Monitoring, sessionId: string, seqId: number) {
     this.monitoring = monitoring;
+    this.tracing = new TracingWrapper(monitoring.client.tracing, {
+      seqId: seqId,
+      sessionId: sessionId,
+    });
     this.sessionId = sessionId;
     this.seqId = seqId;
     this.metrics = {};
@@ -85,7 +92,8 @@ export class MonitoringItem {
 }
 
 export class Monitoring {
-  private client: Hamming;
+  client: Hamming;
+
   private session: MonitoringSession | null;
 
   constructor(client: Hamming) {
@@ -115,9 +123,6 @@ export class Monitoring {
     const item = new MonitoringItem(this, sessionId, seqId);
     item._start();
 
-    const originalGetTraceContext = this._getTraceContext;
-    this._getTraceContext = () => originalGetTraceContext.call(this, item);
-
     try {
       const response = await callback(item);
       item._end();
@@ -126,8 +131,6 @@ export class Monitoring {
     } catch (error) {
       item._end(true, error.message);
       throw error;
-    } finally {
-      this._getTraceContext = originalGetTraceContext;
     }
   }
 
@@ -135,7 +138,7 @@ export class Monitoring {
     this.client.tracing._logLiveTrace(trace);
   }
 
-  _getTraceContext(item?: MonitoringItem): MonitoringTraceContext {
+  _getTraceContext(parentSeqId: number): MonitoringTraceContext {
     if (!this.session) throw Error("Monitoring not started");
 
     const [sessionId, seqId] = this._nextSeqId();
@@ -143,7 +146,7 @@ export class Monitoring {
     return {
       sessionId,
       seqId,
-      parentSeqId: item?.seqId,
+      parentSeqId,
     };
   }
 

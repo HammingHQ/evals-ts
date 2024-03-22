@@ -1,8 +1,19 @@
+import { ExperimentContext } from "./experiments";
+import { MonitoringTraceContext } from "./monitoring";
 export enum TracingMode {
   OFF = "off",
   MONITORING = "monitoring",
   EXPERIMENT = "experiment",
 }
+
+export interface ITracing {
+  logGeneration(params: GenerationParams): void;
+  logRetrieval(params: RetrievalParams): void;
+  log(key: string, value: unknown): void;
+  log(trace: TraceEvent): void;
+}
+
+export type Context = ExperimentContext | MonitoringTraceContext;
 
 export type TraceEvent = Record<string, unknown>;
 
@@ -18,7 +29,7 @@ export interface Document {
   metadata: Record<string, any>;
 }
 
-export interface RetrievalEventParams {
+export interface RetrievalParams {
   query?: string;
   results?: Document[] | string[];
   metadata?: {

@@ -5,6 +5,7 @@ import {
   ExperimentItem,
   ExperimentItemContext,
   ExperimentStatus,
+  RunContext,
   Runner,
   RunOptions,
 } from "../types/experiments";
@@ -16,6 +17,7 @@ import {
   ScoreType,
 } from "../types/types";
 import { runWorkers } from "../utils/worker";
+import { TracingWrapper } from "./Tracing";
 
 class ExperimentItems {
   private client: Hamming;
@@ -98,18 +100,32 @@ export class Experiments {
     try {
       if (opts.parallel) {
         const runFn = async (item: DatasetItem) => {
-          const itemContext = await this.items.start(experiment, item);
-          const output = await run(item.input);
-          await this.items.end(itemContext, output);
+          const itemCtx = await this.items.start(experiment, item);
+          const runCtx: RunContext = {
+            tracing: new TracingWrapper(this.client.tracing, {
+              experiment: {
+                itemId: itemCtx.item.id,
+              },
+            }),
+          };
+          const output = await run(item.input, runCtx);
+          await this.items.end(itemCtx, output);
         };
         const workerCount =
           typeof opts.parallel === "number" ? opts.parallel : undefined;
         await runWorkers(dataset.items, runFn, workerCount);
       } else {
         for (const datasetItem of dataset.items) {
-          const itemContext = await this.items.start(experiment, datasetItem);
-          const output = await run(datasetItem.input);
-          await this.items.end(itemContext, output);
+          const itemCtx = await this.items.start(experiment, datasetItem);
+          const runCtx: RunContext = {
+            tracing: new TracingWrapper(this.client.tracing, {
+              experiment: {
+                itemId: itemCtx.item.id,
+              },
+            }),
+          };
+          const output = await run(datasetItem.input, runCtx);
+          await this.items.end(itemCtx, output);
         }
       }
     } catch (err) {

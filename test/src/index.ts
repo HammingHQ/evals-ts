@@ -177,9 +177,9 @@ async function runExperimentWithMonitoring() {
       item.setInput({ question });
       item.setMetadata({ category: "travel" });
 
-      hamming.tracing.log({ text: "fast log" });
+      item.tracing.log({ text: "fast log" });
 
-      hamming.tracing.logRetrieval({
+      item.tracing.logRetrieval({
         query: "tour guides for France",
         results: [
           "France is a really nice place",
@@ -192,7 +192,7 @@ async function runExperimentWithMonitoring() {
         },
       });
 
-      hamming.tracing.logGeneration({
+      item.tracing.logGeneration({
         input: "What are the travel restrictions in France?",
         output: "You can travel freely in France",
         metadata: {

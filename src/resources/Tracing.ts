@@ -1,18 +1,21 @@
 import type { Hamming } from "../index";
 import { LogMessageType } from "../types/asyncLogger";
-import { MonitoringTrace } from "../types/monitoring";
+import { ExperimentContext } from "../types/experiments";
+import { MonitoringTrace, MonitoringTraceContext } from "../types/monitoring";
 import {
+  Context,
   Document,
   GenerationParams,
-  RetrievalEventParams,
+  ITracing,
+  RetrievalParams,
   Trace,
   TraceEvent,
   TracingMode,
 } from "../types/tracing";
 
-export class Tracing {
+export class Tracing implements ITracing {
   private client: Hamming;
-  private collected: TraceEvent[] = [];
+  private collected: Record<string, TraceEvent[]> = {};
   private currentLocalTraceId: number = 0;
 
   private mode: TracingMode = TracingMode.OFF;
@@ -35,8 +38,8 @@ export class Tracing {
       return;
     }
 
-    const events = this.collected;
-    this.collected = [];
+    const events = this.collected[experimentItemId] ?? [];
+    delete this.collected[experimentItemId];
 
     const rootTrace: Trace = {
       id: this.nextTraceId(),
@@ -69,7 +72,7 @@ export class Tracing {
     };
   }
 
-  private _retrievalEvent(params: RetrievalEventParams): TraceEvent {
+  private _retrievalEvent(params: RetrievalParams): TraceEvent {
     const isString = (item: any) => typeof item === "string";
     const hasStringResults = params.results?.every(isString);
     const normalizeResult = (result: string | Document): Document => {
@@ -102,38 +105,87 @@ export class Tracing {
     });
   }
 
-  log(key: string, value: unknown): void;
-  log(trace: TraceEvent): void;
-  log(keyOrTrace: string | TraceEvent, value?: unknown): void {
-    if (this.mode === TracingMode.MONITORING) {
-      const context = this.client.monitoring._getTraceContext();
+  log(key: string, value: unknown, ctx?: Context): void;
+  log(trace: TraceEvent, ctx?: Context): void;
+  log(
+    keyOrTrace: string | TraceEvent,
+    valueOrCtx?: unknown | Context,
+    ctx?: Context,
+  ): void {
+    const { event, context } = (() => {
+      const isKeyValue = typeof keyOrTrace === "string";
+      if (isKeyValue) {
+        const key = keyOrTrace as string;
+        const value = valueOrCtx as unknown;
+        const event: TraceEvent = { [key]: value };
+        const context = ctx;
+        return { event, context };
+      } else {
+        const event = keyOrTrace as TraceEvent;
+        const context = valueOrCtx as Context;
+        return { event, context };
+      }
+    })();
 
-      if (typeof keyOrTrace === "string") {
-        this._logLiveTrace({
-          ...context,
-          event: { [keyOrTrace]: value },
-        });
-      } else {
-        this._logLiveTrace({
-          ...context,
-          event: keyOrTrace,
-        });
+    if (this.mode === TracingMode.EXPERIMENT) {
+      const experimentContext = context as ExperimentContext;
+
+      const experimentItemId = experimentContext?.experiment?.itemId;
+      if (!experimentItemId) {
+        throw new Error(
+          "Experiment item ID not found, use the new API 'ctx.tracing'.",
+        );
       }
-    } else if (this.mode === TracingMode.EXPERIMENT) {
-      if (typeof keyOrTrace === "string") {
-        this.collected.push({ [keyOrTrace]: value });
-      } else {
-        this.collected.push(keyOrTrace);
+      if (!this.collected[experimentItemId]) {
+        this.collected[experimentItemId] = [];
       }
+      this.collected[experimentItemId].push(event);
+    } else if (this.mode === TracingMode.MONITORING) {
+      const monitoringContext = context as MonitoringTraceContext;
+
+      const trace = this.client.monitoring._getTraceContext(
+        monitoringContext.seqId,
+      );
+
+      this._logLiveTrace({
+        event,
+        ...trace,
+      });
     } else
       console.warn("Attempt to send a log trace, but tracing mode is off!");
   }
 
-  logGeneration(params: GenerationParams): void {
-    this.log(this._generationEvent(params));
+  logGeneration(params: GenerationParams, ctx?: Context): void {
+    this.log(this._generationEvent(params), ctx);
   }
 
-  logRetrieval(params: RetrievalEventParams): void {
-    this.log(this._retrievalEvent(params));
+  logRetrieval(params: RetrievalParams, ctx?: Context): void {
+    this.log(this._retrievalEvent(params), ctx);
+  }
+}
+
+export class TracingWrapper implements ITracing {
+  private wrapped: Tracing;
+  private ctx: Context;
+
+  constructor(tracing: Tracing, context: Context) {
+    this.wrapped = tracing;
+    this.ctx = context;
+  }
+
+  logGeneration(params: GenerationParams): void {
+    this.wrapped.logGeneration(params, this.ctx);
+  }
+
+  logRetrieval(params: RetrievalParams): void {
+    this.wrapped.logRetrieval(params, this.ctx);
+  }
+
+  log(keyOrTrace: string | TraceEvent, value?: unknown): void {
+    if (typeof keyOrTrace === "string") {
+      this.wrapped.log(keyOrTrace, value, this.ctx);
+    } else {
+      this.wrapped.log(keyOrTrace, this.ctx);
+    }
   }
 }

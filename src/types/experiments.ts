@@ -1,4 +1,5 @@
 import { DatasetId } from "./datasets";
+import { ITracing } from "./tracing";
 import type { InputType, MetadataType, OutputType, ScoreType } from "./types";
 
 export enum ExperimentStatus {
@@ -19,6 +20,12 @@ export interface Experiment {
   status: ExperimentStatus;
 }
 
+export interface ExperimentContext {
+  experiment: {
+    itemId?: string;
+  };
+}
+
 export interface ExperimentItemMetrics {
   durationMs?: number;
 }
@@ -36,7 +43,11 @@ export interface ExperimentItemContext {
   startTs: number;
 }
 
-export type Runner = (input: InputType) => Promise<OutputType>;
+export type RunContext = {
+  tracing: ITracing;
+};
+
+export type Runner = (input: InputType, ctx: RunContext) => Promise<OutputType>;
 
 export interface RunOptions {
   dataset: DatasetId;
