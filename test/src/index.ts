@@ -11,6 +11,7 @@ export const env = envsafe({
 });
 
 const hamming = new Hamming({
+  baseURL: env.HAMMING_BASE_URL,
   apiKey: env.HAMMING_API_KEY,
 });
 
@@ -167,10 +168,67 @@ async function runExperiment() {
   );
 }
 
+async function runMonitoring() {
+  hamming.monitoring.start();
+  const trace = hamming.tracing;
+
+  const question = "What is the capital of France?";
+  console.log("Question: ", question);
+
+  const resp = await hamming.monitoring.runItem(async (item) => {
+    item.setInput({ question });
+    item.setMetadata({ category: "geography" });
+
+    // Simulate some work
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    trace.logRetrieval({
+      query: question,
+      results: [
+        {
+          pageContent: "Paris is the capital of France",
+          metadata: {},
+        },
+      ],
+      metadata: {
+        engine: "pinecone",
+      },
+    });
+
+    trace.logGeneration({
+      input: question,
+      output: "Paris",
+      metadata: {
+        provider: "openai",
+        model: "gpt-3.5-turbo",
+        stream: false,
+        max_tokens: 1000,
+        n: 1,
+        seed: 42,
+        temperature: 0.7,
+        usage: {
+          completion_tokens: 100,
+          prompt_tokens: 10,
+          total_tokens: 110,
+        },
+        duration_ms: 510,
+        error: false,
+      },
+    });
+
+    return { answer: "Paris" };
+  });
+
+  console.log("AI response: ", resp);
+
+  hamming.monitoring.stop();
+}
+
 async function run() {
   // await createLargeDataset(hamming, 1000);
-  await runExperiment();
+  // await runExperiment();
   // await simpleRagExample();
+  await runMonitoring();
 }
 
 run().catch((err) => {
