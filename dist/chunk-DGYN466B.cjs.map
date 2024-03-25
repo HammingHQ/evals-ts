@@ -1,0 +1,1 @@
+{"version":3,"sources":["../src/asyncStorage.ts"],"names":["AsyncLocalStorage","asyncRunContext"],"mappings":"AAAA,OAAS,qBAAAA,MAAyB,cAG3B,IAAMC,EAAkB,IAAID","sourcesContent":["import { AsyncLocalStorage } from \"node:async_hooks\";\nimport { RunContext } from \"./types\";\n\nexport const asyncRunContext = new AsyncLocalStorage<RunContext>();\n"]}
