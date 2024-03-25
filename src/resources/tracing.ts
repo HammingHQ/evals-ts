@@ -3,25 +3,28 @@ import type { Hamming } from "../client";
 import {
   Document,
   GenerationParams,
+  ITracing,
+  LogMessageType,
+  MonitoringTrace,
   RetrievalParams,
   Trace,
   TraceEvent,
+  TracingMode,
 } from "../types";
-
-interface ITracing {
-  logGeneration(params: GenerationParams): void;
-  logRetrieval(params: RetrievalParams): void;
-  log(key: string, value: unknown): void;
-  log(trace: TraceEvent): void;
-}
 
 export class Tracing implements ITracing {
   private client: Hamming;
   private collected: Record<string, TraceEvent[]> = {};
   private currentLocalTraceId: number = 0;
 
+  private mode: TracingMode = TracingMode.OFF;
+
   constructor(client: Hamming) {
     this.client = client;
+  }
+
+  _setMode(mode: TracingMode) {
+    this.mode = mode;
   }
 
   private nextTraceId(): number {
@@ -29,6 +32,11 @@ export class Tracing implements ITracing {
   }
 
   async _flush(experimentItemId: string) {
+    if (this.mode !== TracingMode.EXPERIMENT) {
+      console.warn(`Tracing mode must be set to <experiment>!`);
+      return;
+    }
+
     const events = this.collected[experimentItemId] ?? [];
     delete this.collected[experimentItemId];
 
@@ -85,6 +93,18 @@ export class Tracing implements ITracing {
     };
   }
 
+  _logLiveTrace(trace: MonitoringTrace) {
+    if (this.mode !== TracingMode.MONITORING) {
+      console.warn(`Tracing mode must be set to <monitoring>!`);
+      return;
+    }
+
+    this.client._logger.log({
+      type: LogMessageType.MONITORING,
+      payload: trace,
+    });
+  }
+
   log(key: string, value: unknown): void;
   log(trace: TraceEvent): void;
   log(keyOrTrace: string | TraceEvent, value?: unknown): void {
@@ -100,17 +120,27 @@ export class Tracing implements ITracing {
       }
     })();
 
-    const runCtx = asyncRunContext.getStore();
-    const itemId = runCtx?.tracing?.experiment?.itemId;
+    if (this.mode === TracingMode.EXPERIMENT) {
+      const runCtx = asyncRunContext.getStore();
+      const itemId = runCtx?.tracing?.experiment?.itemId;
 
-    if (!itemId) {
-      console.error("Unable to log trace event without experiment item ID.");
-      return;
+      if (!itemId) {
+        console.error("Unable to log trace event without experiment item ID.");
+        return;
+      }
+      if (!this.collected[itemId]) {
+        this.collected[itemId] = [];
+      }
+      this.collected[itemId].push(event);
+    } else if (this.mode === TracingMode.MONITORING) {
+      const trace = this.client.monitoring._getTraceContext();
+      this._logLiveTrace({
+        event,
+        ...trace,
+      });
+    } else {
+      console.warn("Attempt to send a log trace, but tracing mode is off!");
     }
-    if (!this.collected[itemId]) {
-      this.collected[itemId] = [];
-    }
-    this.collected[itemId].push(event);
   }
 
   logGeneration(params: GenerationParams): void {
