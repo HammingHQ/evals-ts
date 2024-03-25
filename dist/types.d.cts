@@ -69,6 +69,9 @@ interface TracingContext {
     experiment?: {
         itemId?: string;
     };
+    monitoring?: {
+        seqId?: number;
+    };
 }
 type RunContext = {
     tracing: TracingContext;
@@ -84,11 +87,26 @@ interface CreateDatasetOptions {
     items: DatasetItemValue[];
 }
 type TraceEvent = Record<string, unknown>;
+type LLMProvider = "openai" | "anthropic" | "azure_openai";
 interface GenerationParams {
     input?: string;
     output?: string;
     metadata?: {
+        provider?: LLMProvider;
         model?: string;
+        stream?: boolean;
+        max_tokens?: number;
+        n?: number;
+        seed?: number;
+        temperature?: number;
+        usage?: {
+            completion_tokens?: number;
+            prompt_tokens?: number;
+            total_tokens?: number;
+        };
+        duration_ms?: number;
+        error?: boolean;
+        error_message?: string;
     };
 }
 interface Document {
@@ -108,5 +126,45 @@ interface Trace {
     parentId?: number;
     event: TraceEvent;
 }
+declare enum TracingMode {
+    OFF = "off",
+    MONITORING = "monitoring",
+    EXPERIMENT = "experiment"
+}
+interface ITracing {
+    logGeneration(params: GenerationParams): void;
+    logRetrieval(params: RetrievalParams): void;
+    log(key: string, value: unknown): void;
+    log(trace: TraceEvent): void;
+}
+interface MonitoringItem {
+    setInput(input: InputType): void;
+    setOutput(output: OutputType): void;
+    setMetadata(metadata: MetadataType): void;
+}
+declare enum MonitoringItemStatus {
+    STARTED = "STARTED",
+    COMPLETED = "COMPLETED",
+    FAILED = "FAILED"
+}
+interface MonitoringSession {
+    id: string;
+    seqId: number;
+}
+interface MonitoringTraceContext {
+    session_id: string;
+    seq_id: number;
+    parent_seq_id: number | null;
+}
+interface MonitoringTrace extends MonitoringTraceContext {
+    event: TraceEvent;
+}
+declare enum LogMessageType {
+    MONITORING = 1
+}
+interface LogMessage {
+    type: LogMessageType;
+    payload?: MonitoringTrace;
+}
 
-export { type ClientOptions, type CreateDatasetOptions, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, type GenerationParams, type InputType, type MetadataType, type OutputType, type RetrievalParams, type RunContext, type RunOptions, type Runner, ScoreType, type Trace, type TraceEvent };
+export { type ClientOptions, type CreateDatasetOptions, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, type GenerationParams, type ITracing, type InputType, type LLMProvider, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringTrace, type MonitoringTraceContext, type OutputType, type RetrievalParams, type RunContext, type RunOptions, type Runner, ScoreType, type Trace, type TraceEvent, TracingMode };
