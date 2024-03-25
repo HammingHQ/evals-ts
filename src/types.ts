@@ -78,6 +78,9 @@ interface TracingContext {
   experiment?: {
     itemId?: string;
   };
+  monitoring?: {
+    seqId?: number;
+  };
 }
 
 export type RunContext = {
@@ -99,11 +102,27 @@ export interface CreateDatasetOptions {
 
 export type TraceEvent = Record<string, unknown>;
 
+export type LLMProvider = "openai" | "anthropic" | "azure_openai";
+
 export interface GenerationParams {
   input?: string;
   output?: string;
   metadata?: {
+    provider?: LLMProvider;
     model?: string;
+    stream?: boolean;
+    max_tokens?: number;
+    n?: number;
+    seed?: number;
+    temperature?: number;
+    usage?: {
+      completion_tokens?: number;
+      prompt_tokens?: number;
+      total_tokens?: number;
+    };
+    duration_ms?: number;
+    error?: boolean;
+    error_message?: string;
   };
 }
 
@@ -125,4 +144,53 @@ export interface Trace {
   experimentItemId: string;
   parentId?: number;
   event: TraceEvent;
+}
+
+export enum TracingMode {
+  OFF = "off",
+  MONITORING = "monitoring",
+  EXPERIMENT = "experiment",
+}
+
+export interface ITracing {
+  logGeneration(params: GenerationParams): void;
+  logRetrieval(params: RetrievalParams): void;
+  log(key: string, value: unknown): void;
+  log(trace: TraceEvent): void;
+}
+
+export interface MonitoringItem {
+  setInput(input: InputType): void;
+  setOutput(output: OutputType): void;
+  setMetadata(metadata: MetadataType): void;
+}
+
+export enum MonitoringItemStatus {
+  STARTED = "STARTED",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+}
+
+export interface MonitoringSession {
+  id: string;
+  seqId: number;
+}
+
+export interface MonitoringTraceContext {
+  session_id: string;
+  seq_id: number;
+  parent_seq_id: number | null;
+}
+
+export interface MonitoringTrace extends MonitoringTraceContext {
+  event: TraceEvent;
+}
+
+export enum LogMessageType {
+  MONITORING = 1,
+}
+
+export interface LogMessage {
+  type: LogMessageType;
+  payload?: MonitoringTrace;
 }
