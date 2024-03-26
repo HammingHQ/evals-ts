@@ -139,6 +139,17 @@ export class Monitoring {
         newRunContext(item.seqId),
         async () => await callback(item),
       );
+      if (!item.output) {
+        if (
+          response &&
+          response instanceof Object &&
+          !Array.isArray(response)
+        ) {
+          item.setOutput(response);
+        } else {
+          item.setOutput({ response });
+        }
+      }
       item._end();
 
       return response;
