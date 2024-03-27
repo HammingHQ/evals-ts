@@ -154,7 +154,7 @@ interface MonitoringSession {
 interface MonitoringTraceContext {
     session_id: string;
     seq_id: number;
-    parent_seq_id: number | null;
+    parent_seq_id?: number;
 }
 interface MonitoringTrace extends MonitoringTraceContext {
     event: TraceEvent;
