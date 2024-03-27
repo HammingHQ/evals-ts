@@ -86,7 +86,7 @@ class MonitoringItem implements IMonitoringItem {
     return {
       session_id: this.sessionId,
       seq_id: this.seqId,
-      parent_seq_id: null,
+      parent_seq_id: undefined,
       event: {
         kind: "root",
         input: this.input,
@@ -168,7 +168,7 @@ export class Monitoring {
 
     const [sessionId, seqId] = this._nextSeqId();
     const runCtx = asyncRunContext.getStore();
-    const parentSeqId = runCtx?.tracing?.monitoring?.seqId ?? null;
+    const parentSeqId = runCtx?.tracing?.monitoring?.seqId;
 
     return {
       session_id: sessionId,

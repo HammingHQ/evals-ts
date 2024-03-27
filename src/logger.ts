@@ -50,30 +50,20 @@ export class Logger {
     }
   }
 
-  private async _publish(msgs: LogMessage[]): Promise<void> {
-    if (msgs.length === 0) {
+  private async _publish(logs: LogMessage[]): Promise<void> {
+    if (logs.length === 0) {
       return;
     }
     if (process.env.NODE_ENV === "development") {
-      console.log(`Publishing ${msgs.length} message(s)..`);
+      console.log(`Publishing ${logs.length} message(s)..`);
     }
     try {
       await this.client.fetch("/logs", {
         method: "POST",
-        body: JSON.stringify({
-          logs: msgs.map((msg) => ({
-            ...msg,
-            payload: {
-              ...msg.payload,
-              session_id: msg.payload?.session_id,
-              seq_id: msg.payload?.seq_id,
-              parent_seq_id: msg.payload?.parent_seq_id,
-            },
-          })),
-        }),
+        body: JSON.stringify({ logs }),
       });
       if (process.env.NODE_ENV === "development") {
-        console.log(`Published ${msgs.length} messages!`);
+        console.log(`Published ${logs.length} messages!`);
       }
     } catch (e) {
       console.error(`Failed to publish messages: ${e}`);

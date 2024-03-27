@@ -179,7 +179,7 @@ export interface MonitoringSession {
 export interface MonitoringTraceContext {
   session_id: string;
   seq_id: number;
-  parent_seq_id: number | null;
+  parent_seq_id?: number;
 }
 
 export interface MonitoringTrace extends MonitoringTraceContext {
