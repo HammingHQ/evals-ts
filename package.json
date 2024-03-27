@@ -1,6 +1,6 @@
 {
   "name": "@hamming/hamming-sdk",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "SDK for Hamming Evals Framework",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
