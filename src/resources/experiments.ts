@@ -13,6 +13,7 @@ import {
   RunOptions,
   Runner,
   ScoreType,
+  TracingMode,
 } from "../types";
 import { runWorkers } from "../worker";
 
@@ -93,6 +94,8 @@ export class Experiments {
   async run(opts: RunOptions, run: Runner) {
     const { dataset: datasetId } = opts;
     const dataset = await this.client.datasets.load(datasetId);
+
+    this.client.tracing._setMode(TracingMode.EXPERIMENT);
 
     const {
       name = this.generateName(dataset.name),
