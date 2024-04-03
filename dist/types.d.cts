@@ -64,6 +64,7 @@ interface RunOptions {
     scoring?: ScoreType[];
     metadata?: MetadataType;
     parallel?: boolean | number;
+    sampling?: number;
 }
 interface TracingContext {
     experiment?: {
