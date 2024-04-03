@@ -17,6 +17,8 @@ import {
 } from "../types";
 import { runWorkers } from "../worker";
 
+const MAX_SAMPLES = 10;
+
 function newRunContext(itemId: string): RunContext {
   return {
     tracing: {
@@ -39,6 +41,7 @@ class ExperimentItems {
   async start(
     experiment: Experiment,
     datasetItem: DatasetItem,
+    sampleId?: number,
   ): Promise<ExperimentItemContext> {
     const resp = await this.client.fetch(
       `/experiments/${experiment.id}/items`,
@@ -48,6 +51,7 @@ class ExperimentItems {
           datasetItemId: datasetItem.id,
           output: {},
           metrics: {},
+          sampleId,
         }),
       },
     );
@@ -101,33 +105,51 @@ export class Experiments {
       name = this.generateName(dataset.name),
       scoring = defaultScoreTypes,
       metadata = {},
+      sampling,
     } = opts;
 
-    const experiment = await this.start(name, datasetId, scoring, metadata);
+    const sampleCount = sampling ?? 1;
+    if (sampleCount > MAX_SAMPLES) {
+      throw new Error(`The maximum number of samples is ${MAX_SAMPLES}.`);
+    }
+
+    const experiment = await this.start(
+      name,
+      datasetId,
+      scoring,
+      metadata,
+      sampling,
+    );
     const baseUrl = new URL(this.client.baseURL);
     const experimentUrl = `${baseUrl.origin}/experiments/${experiment.id}`;
 
     try {
-      if (opts.parallel) {
-        const runFn = async (item: DatasetItem) => {
-          const itemCtx = await this.items.start(experiment, item);
-          const output = await asyncRunContext.run(
-            newRunContext(itemCtx.item.id),
-            async () => run(item.input),
-          );
-          await this.items.end(itemCtx, output);
-        };
-        const workerCount =
-          typeof opts.parallel === "number" ? opts.parallel : undefined;
-        await runWorkers(dataset.items, runFn, workerCount);
-      } else {
-        for (const datasetItem of dataset.items) {
-          const itemCtx = await this.items.start(experiment, datasetItem);
-          const output = await asyncRunContext.run(
-            newRunContext(itemCtx.item.id),
-            async () => await run(datasetItem.input),
-          );
-          await this.items.end(itemCtx, output);
+      for (let sampleId = 0; sampleId < sampleCount; sampleId++) {
+        if (opts.parallel) {
+          const runFn = async (item: DatasetItem) => {
+            const itemCtx = await this.items.start(experiment, item, sampleId);
+            const output = await asyncRunContext.run(
+              newRunContext(itemCtx.item.id),
+              async () => run(item.input),
+            );
+            await this.items.end(itemCtx, output);
+          };
+          const workerCount =
+            typeof opts.parallel === "number" ? opts.parallel : undefined;
+          await runWorkers(dataset.items, runFn, workerCount);
+        } else {
+          for (const datasetItem of dataset.items) {
+            const itemCtx = await this.items.start(
+              experiment,
+              datasetItem,
+              sampleId,
+            );
+            const output = await asyncRunContext.run(
+              newRunContext(itemCtx.item.id),
+              async () => await run(datasetItem.input),
+            );
+            await this.items.end(itemCtx, output);
+          }
         }
       }
     } catch (err) {
@@ -145,6 +167,7 @@ export class Experiments {
     dataset: DatasetId,
     scoring: ScoreType[],
     metadata: MetadataType,
+    sampling?: number,
   ): Promise<Experiment> {
     const status = ExperimentStatus.RUNNING;
     const resp = await this.client.fetch(`/experiments`, {
@@ -155,6 +178,7 @@ export class Experiments {
         status,
         scoring,
         metadata,
+        sampling,
       }),
     });
 
