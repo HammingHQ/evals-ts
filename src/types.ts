@@ -69,7 +69,7 @@ export type DatasetWithItems = Dataset & { items: DatasetItem[] };
 export interface RunOptions {
   dataset: DatasetId;
   name?: string;
-  scoring?: ScoreType[];
+  scoring?: (ScoreType | ScoringFunction)[];
   metadata?: MetadataType;
   parallel?: boolean | number;
   sampling?: number;
@@ -194,4 +194,86 @@ export enum LogMessageType {
 export interface LogMessage {
   type: LogMessageType;
   payload?: MonitoringTrace;
+}
+
+export interface Score {
+  value: number;
+  reason?: string;
+}
+
+export enum FunctionType {
+  Numeric = "numeric",
+  Classification = "classification",
+}
+
+export type NumericScoreConfig = {
+  type: FunctionType.Numeric;
+  aggregate: "mean" | "median";
+};
+
+export type ClassificationScoreConfig = {
+  type: FunctionType.Classification;
+  labels: Record<number, string>;
+  colors?: Record<number, LabelColor>;
+};
+
+export type ScoreConfig = ClassificationScoreConfig | NumericScoreConfig;
+
+export enum ScorerExecutionType {
+  Local = "local",
+  Remote = "remote",
+}
+
+type Scorer = LocalScorer | LLMClassifyScorer;
+
+export interface LocalScorer {
+  type: ScorerExecutionType.Local;
+  scoreFn: (args: {
+    input: InputType;
+    output: OutputType;
+    expected: OutputType;
+  }) => Promise<Score>;
+}
+
+interface RemoteScorer {
+  type: ScorerExecutionType.Remote;
+}
+
+interface OpenAIModelConfig {
+  model: string;
+  temperature?: number;
+  seed?: number;
+  maxTokens?: number;
+}
+
+export interface LLMClassifyScorer extends RemoteScorer {
+  provider: LLMProvider;
+  config: OpenAIModelConfig;
+  promptTemplate: string;
+}
+
+export interface ScoringFunction {
+  name: string;
+  version: number;
+  scoreConfig?: ScoreConfig;
+  scorer: Scorer;
+}
+
+export interface CustomScoringConfig {
+  id: string;
+  key_name: string;
+}
+
+export enum LabelColor {
+  Gray = "gray",
+  LightGreen = "light-green",
+  LightBlue = "light-blue",
+  Amber = "amber",
+  Purple = "purple",
+  Pink = "pink",
+  Green = "green",
+  PastelGreen = "pastel-green",
+  Yellow = "yellow",
+  Blue = "blue",
+  Red = "red",
 }

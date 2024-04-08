@@ -61,7 +61,7 @@ type DatasetWithItems = Dataset & {
 interface RunOptions {
     dataset: DatasetId;
     name?: string;
-    scoring?: ScoreType[];
+    scoring?: (ScoreType | ScoringFunction)[];
     metadata?: MetadataType;
     parallel?: boolean | number;
     sampling?: number;
@@ -167,5 +167,73 @@ interface LogMessage {
     type: LogMessageType;
     payload?: MonitoringTrace;
 }
+interface Score {
+    value: number;
+    reason?: string;
+}
+declare enum FunctionType {
+    Numeric = "numeric",
+    Classification = "classification"
+}
+type NumericScoreConfig = {
+    type: FunctionType.Numeric;
+    aggregate: "mean" | "median";
+};
+type ClassificationScoreConfig = {
+    type: FunctionType.Classification;
+    labels: Record<number, string>;
+    colors?: Record<number, Colors>;
+};
+type ScoreConfig = ClassificationScoreConfig | NumericScoreConfig;
+declare enum ScorerExecutionType {
+    Local = "local",
+    Remote = "remote"
+}
+type Scorer = LocalScorer | LLMClassifyScorer;
+interface LocalScorer {
+    type: ScorerExecutionType.Local;
+    scoreFn: (args: {
+        input: InputType;
+        output: OutputType;
+        expected: OutputType;
+    }) => Promise<Score>;
+}
+interface RemoteScorer {
+    type: ScorerExecutionType.Remote;
+}
+interface OpenAIModelConfig {
+    model: string;
+    temperature?: number;
+    seed?: number;
+    maxTokens?: number;
+}
+interface LLMClassifyScorer extends RemoteScorer {
+    provider: LLMProvider;
+    config: OpenAIModelConfig;
+    promptTemplate: string;
+}
+interface ScoringFunction {
+    name: string;
+    version: number;
+    scoreConfig?: ScoreConfig;
+    scorer: Scorer;
+}
+interface CustomScoringConfig {
+    id: string;
+    key_name: string;
+}
+declare enum Colors {
+    Gray = "gray",
+    LightGreen = "light-green",
+    LightBlue = "light-blue",
+    Amber = "amber",
+    Purple = "purple",
+    Pink = "pink",
+    Green = "green",
+    PastelGreen = "pastel-green",
+    Yellow = "yellow",
+    Blue = "blue",
+    Red = "red"
+}
 
-export { type ClientOptions, type CreateDatasetOptions, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, type GenerationParams, type ITracing, type InputType, type LLMProvider, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringTrace, type MonitoringTraceContext, type OutputType, type RetrievalParams, type RunContext, type RunOptions, type Runner, ScoreType, type Trace, type TraceEvent, TracingMode };
+export { type ClassificationScoreConfig, type ClientOptions, Colors, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationParams, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreType, ScorerExecutionType, type ScoringFunction, type Trace, type TraceEvent, TracingMode };
