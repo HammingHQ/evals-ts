@@ -182,7 +182,7 @@ type NumericScoreConfig = {
 type ClassificationScoreConfig = {
     type: FunctionType.Classification;
     labels: Record<number, string>;
-    colors?: Record<number, Colors>;
+    colors?: Record<number, LabelColor>;
 };
 type ScoreConfig = ClassificationScoreConfig | NumericScoreConfig;
 declare enum ScorerExecutionType {
@@ -222,7 +222,7 @@ interface CustomScoringConfig {
     id: string;
     key_name: string;
 }
-declare enum Colors {
+declare enum LabelColor {
     Gray = "gray",
     LightGreen = "light-green",
     LightBlue = "light-blue",
@@ -236,4 +236,4 @@ declare enum Colors {
     Red = "red"
 }
 
-export { type ClassificationScoreConfig, type ClientOptions, Colors, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationParams, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreType, ScorerExecutionType, type ScoringFunction, type Trace, type TraceEvent, TracingMode };
+export { type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationParams, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreType, ScorerExecutionType, type ScoringFunction, type Trace, type TraceEvent, TracingMode };
