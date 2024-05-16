@@ -59,6 +59,10 @@ class MonitoringItem implements IMonitoringItem {
     this.metadata = metadata;
   }
 
+  end(error: boolean = false, errorMessage?: string) {
+    this._end(error, errorMessage);
+  }
+
   _start() {
     this.startTs = Date.now();
     this.status = MonitoringItemStatus.STARTED;
@@ -157,6 +161,14 @@ export class Monitoring {
       item._end(true, error.message);
       throw error;
     }
+  }
+
+  startItem(): IMonitoringItem {
+    const [sessionId, seqId] = this._nextSeqId();
+
+    const item = new MonitoringItem(this, sessionId, seqId);
+    item._start();
+    return item;
   }
 
   _endItem(trace: MonitoringTrace) {

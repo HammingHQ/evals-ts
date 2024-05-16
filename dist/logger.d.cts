@@ -1,4 +1,4 @@
 import './types.cjs';
-export { L as Logger } from './client-Fh-7v95i.cjs';
+export { L as Logger } from './client-QAGXuzXa.cjs';
 import './httpClient.cjs';
 import './fetchClient.cjs';

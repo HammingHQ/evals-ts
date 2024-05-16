@@ -1,5 +1,5 @@
-import { DatasetId, DatasetWithItems, Dataset, CreateDatasetOptions, RunOptions, Runner, MonitoringItem, MonitoringTrace, MonitoringTraceContext, ITracing, TracingMode, TraceEvent, GenerationParams, RetrievalParams, LogMessage, ClientOptions } from './types.cjs';
-import { HttpClient } from './httpClient.cjs';
+import { DatasetId, DatasetWithItems, Dataset, CreateDatasetOptions, RunOptions, Runner, MonitoringItem, MonitoringTrace, MonitoringTraceContext, ITracing, TracingMode, TraceEvent, GenerationParams, RetrievalParams, LogMessage, ClientOptions } from './types.js';
+import { HttpClient } from './httpClient.js';
 
 declare class Datasets {
     private client;
@@ -28,6 +28,7 @@ declare class Monitoring {
     start(): void;
     stop(): void;
     runItem(callback: (item: MonitoringItem) => unknown | Promise<unknown>): Promise<unknown>;
+    startItem(): MonitoringItem;
     _endItem(trace: MonitoringTrace): void;
     _getTraceContext(): MonitoringTraceContext;
     private _nextSeqId;
