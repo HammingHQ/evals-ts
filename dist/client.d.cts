@@ -1,4 +1,4 @@
 import './httpClient.cjs';
-export { H as Hamming } from './client-Fh-7v95i.cjs';
+export { H as Hamming } from './client-mi_flKlc.cjs';
 import './types.cjs';
 import './fetchClient.cjs';

@@ -159,6 +159,31 @@ export class Monitoring {
     }
   }
 
+  startItem(): IMonitoringItem {
+    const [sessionId, seqId] = this._nextSeqId();
+
+    const item = new MonitoringItem(this, sessionId, seqId);
+    item._start();
+    return item;
+  }
+
+  endItem(item: IMonitoringItem, response?: OutputType) {
+    if (item instanceof MonitoringItem) {
+      if (!item.output) {
+        if (
+          response &&
+          response instanceof Object &&
+          !Array.isArray(response)
+        ) {
+          item.setOutput(response);
+        } else {
+          item.setOutput({ response });
+        }
+      }
+      item._end();
+    }
+  }
+
   _endItem(trace: MonitoringTrace) {
     this.client.tracing._logLiveTrace(trace);
   }
