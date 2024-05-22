@@ -12,7 +12,64 @@ import {
   TracingMode,
 } from "../types";
 
-export class Tracing implements ITracing {
+export abstract class TracerBase implements ITracing {
+  abstract logEvent(event: TraceEvent): void;
+
+  private _generationEvent(params: GenerationParams): TraceEvent {
+    return {
+      kind: "llm",
+      ...params,
+    };
+  }
+
+  private _retrievalEvent(params: RetrievalParams): TraceEvent {
+    const isString = (item: any) => typeof item === "string";
+    const hasStringResults = params.results?.every(isString);
+    const normalizeResult = (result: string | Document): Document => {
+      if (typeof result === "string") {
+        return { pageContent: result, metadata: {} };
+      }
+      return result;
+    };
+
+    const results = hasStringResults
+      ? params.results?.map(normalizeResult)
+      : params.results;
+
+    return {
+      kind: "vector",
+      ...params,
+      results,
+    };
+  }
+
+  log(key: string, value: unknown): void;
+  log(trace: TraceEvent): void;
+  log(keyOrTrace: string | TraceEvent, value?: unknown): void {
+    const event = (() => {
+      const isKeyValue = typeof keyOrTrace === "string";
+      if (isKeyValue) {
+        const key = keyOrTrace as string;
+        const event: TraceEvent = { [key]: value };
+        return event;
+      } else {
+        const event = keyOrTrace as TraceEvent;
+        return event;
+      }
+    })();
+    this.logEvent(event);
+  }
+
+  logGeneration(params: GenerationParams): void {
+    this.log(this._generationEvent(params));
+  }
+
+  logRetrieval(params: RetrievalParams): void {
+    this.log(this._retrievalEvent(params));
+  }
+}
+
+export class Tracing extends TracerBase implements ITracing {
   private client: Hamming;
   private collected: Record<string, TraceEvent[]> = {};
   private currentLocalTraceId: number = 0;
@@ -20,6 +77,7 @@ export class Tracing implements ITracing {
   private mode: TracingMode = TracingMode.OFF;
 
   constructor(client: Hamming) {
+    super();
     this.client = client;
   }
 
@@ -65,34 +123,6 @@ export class Tracing implements ITracing {
     });
   }
 
-  private _generationEvent(params: GenerationParams): TraceEvent {
-    return {
-      kind: "llm",
-      ...params,
-    };
-  }
-
-  private _retrievalEvent(params: RetrievalParams): TraceEvent {
-    const isString = (item: any) => typeof item === "string";
-    const hasStringResults = params.results?.every(isString);
-    const normalizeResult = (result: string | Document): Document => {
-      if (typeof result === "string") {
-        return { pageContent: result, metadata: {} };
-      }
-      return result;
-    };
-
-    const results = hasStringResults
-      ? params.results?.map(normalizeResult)
-      : params.results;
-
-    return {
-      kind: "vector",
-      ...params,
-      results,
-    };
-  }
-
   _logLiveTrace(trace: MonitoringTrace) {
     if (this.mode !== TracingMode.MONITORING) {
       console.warn(`Tracing mode must be set to <monitoring>!`);
@@ -105,25 +135,10 @@ export class Tracing implements ITracing {
     });
   }
 
-  log(key: string, value: unknown): void;
-  log(trace: TraceEvent): void;
-  log(keyOrTrace: string | TraceEvent, value?: unknown): void {
-    const event = (() => {
-      const isKeyValue = typeof keyOrTrace === "string";
-      if (isKeyValue) {
-        const key = keyOrTrace as string;
-        const event: TraceEvent = { [key]: value };
-        return event;
-      } else {
-        const event = keyOrTrace as TraceEvent;
-        return event;
-      }
-    })();
-
+  logEvent(event: TraceEvent) {
+    const runCtx = asyncRunContext.getStore();
     if (this.mode === TracingMode.EXPERIMENT) {
-      const runCtx = asyncRunContext.getStore();
       const itemId = runCtx?.tracing?.experiment?.itemId;
-
       if (!itemId) {
         console.error("Unable to log trace event without experiment item ID.");
         return;
@@ -133,7 +148,7 @@ export class Tracing implements ITracing {
       }
       this.collected[itemId].push(event);
     } else if (this.mode === TracingMode.MONITORING) {
-      const trace = this.client.monitoring._getTraceContext();
+      const trace = this.client.monitoring._getTraceContext(runCtx);
       this._logLiveTrace({
         event,
         ...trace,
@@ -141,13 +156,5 @@ export class Tracing implements ITracing {
     } else {
       console.warn("Attempt to send a log trace, but tracing mode is off!");
     }
-  }
-
-  logGeneration(params: GenerationParams): void {
-    this.log(this._generationEvent(params));
-  }
-
-  logRetrieval(params: RetrievalParams): void {
-    this.log(this._retrievalEvent(params));
   }
 }

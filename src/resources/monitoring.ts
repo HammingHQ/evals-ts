@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 
-import type { Hamming, RunContext } from "../index";
+import type { Hamming, RunContext, TraceEvent } from "../index";
 
 import {
   MonitoringItem as IMonitoringItem,
@@ -15,6 +15,7 @@ import {
   MonitoringTraceContext,
 } from "../types";
 import { asyncRunContext } from "../asyncStorage";
+import { TracerBase } from "./tracing";
 
 function newRunContext(seqId: number): RunContext {
   return {
@@ -26,8 +27,27 @@ function newRunContext(seqId: number): RunContext {
   };
 }
 
+class MonitoringItemTracing extends TracerBase implements ITracing {
+  client: Hamming;
+  runCtx: RunContext;
+
+  constructor(client: Hamming, seqId: number) {
+    super();
+    this.client = client;
+    this.runCtx = newRunContext(seqId);
+  }
+
+  logEvent(event: TraceEvent) {
+    const trace = this.client.monitoring._getTraceContext(this.runCtx);
+    this.client.tracing._logLiveTrace({
+      event,
+      ...trace,
+    });
+  }
+}
+
 class MonitoringItem implements IMonitoringItem {
-  monitoring: Monitoring;
+  client: Hamming;
   sessionId: string;
   seqId: number;
   input: InputType | undefined;
@@ -40,11 +60,12 @@ class MonitoringItem implements IMonitoringItem {
 
   tracing: ITracing;
 
-  constructor(monitoring: Monitoring, sessionId: string, seqId: number) {
-    this.monitoring = monitoring;
+  constructor(client: Hamming, sessionId: string, seqId: number) {
+    this.client = client;
     this.sessionId = sessionId;
     this.seqId = seqId;
     this.metrics = {};
+    this.tracing = new MonitoringItemTracing(client, seqId);
   }
 
   setInput(input: InputType) {
@@ -76,7 +97,7 @@ class MonitoringItem implements IMonitoringItem {
       ? MonitoringItemStatus.FAILED
       : MonitoringItemStatus.COMPLETED;
     this.errorMessage = errorMessage;
-    this.monitoring._endItem(this._toTrace());
+    this.client.monitoring._endItem(this._toTrace());
   }
 
   _hasEnded() {
@@ -135,7 +156,7 @@ export class Monitoring {
   ): Promise<unknown> {
     const [sessionId, seqId] = this._nextSeqId();
 
-    const item = new MonitoringItem(this, sessionId, seqId);
+    const item = new MonitoringItem(this.client, sessionId, seqId);
     item._start();
 
     try {
@@ -166,7 +187,7 @@ export class Monitoring {
   startItem(): IMonitoringItem {
     const [sessionId, seqId] = this._nextSeqId();
 
-    const item = new MonitoringItem(this, sessionId, seqId);
+    const item = new MonitoringItem(this.client, sessionId, seqId);
     item._start();
     return item;
   }
@@ -175,12 +196,11 @@ export class Monitoring {
     this.client.tracing._logLiveTrace(trace);
   }
 
-  _getTraceContext(): MonitoringTraceContext {
+  _getTraceContext(ctx?: RunContext): MonitoringTraceContext {
     if (!this.session) throw Error("Monitoring not started");
 
     const [sessionId, seqId] = this._nextSeqId();
-    const runCtx = asyncRunContext.getStore();
-    const parentSeqId = runCtx?.tracing?.monitoring?.seqId;
+    const parentSeqId = ctx?.tracing?.monitoring?.seqId;
 
     return {
       session_id: sessionId,
