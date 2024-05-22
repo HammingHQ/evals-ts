@@ -1,5 +1,5 @@
-import { DatasetId, DatasetWithItems, Dataset, CreateDatasetOptions, RunOptions, Runner, MonitoringItem, MonitoringTrace, MonitoringTraceContext, ITracing, TracingMode, TraceEvent, GenerationParams, RetrievalParams, LogMessage, ClientOptions } from './types.js';
-import { HttpClient } from './httpClient.js';
+import { DatasetId, DatasetWithItems, Dataset, CreateDatasetOptions, RunOptions, Runner, MonitoringItem, MonitoringTrace, RunContext, MonitoringTraceContext, ITracing, TraceEvent, GenerationParams, RetrievalParams, TracingMode, LogMessage, ClientOptions } from './types.cjs';
+import { HttpClient } from './httpClient.cjs';
 
 declare class Datasets {
     private client;
@@ -30,11 +30,20 @@ declare class Monitoring {
     runItem(callback: (item: MonitoringItem) => unknown | Promise<unknown>): Promise<unknown>;
     startItem(): MonitoringItem;
     _endItem(trace: MonitoringTrace): void;
-    _getTraceContext(): MonitoringTraceContext;
+    _getTraceContext(ctx?: RunContext): MonitoringTraceContext;
     private _nextSeqId;
 }
 
-declare class Tracing implements ITracing {
+declare abstract class TracerBase implements ITracing {
+    abstract logEvent(event: TraceEvent): void;
+    private _generationEvent;
+    private _retrievalEvent;
+    log(key: string, value: unknown): void;
+    log(trace: TraceEvent): void;
+    logGeneration(params: GenerationParams): void;
+    logRetrieval(params: RetrievalParams): void;
+}
+declare class Tracing extends TracerBase implements ITracing {
     private client;
     private collected;
     private currentLocalTraceId;
@@ -43,13 +52,8 @@ declare class Tracing implements ITracing {
     _setMode(mode: TracingMode): void;
     private nextTraceId;
     _flush(experimentItemId: string): Promise<void>;
-    private _generationEvent;
-    private _retrievalEvent;
     _logLiveTrace(trace: MonitoringTrace): void;
-    log(key: string, value: unknown): void;
-    log(trace: TraceEvent): void;
-    logGeneration(params: GenerationParams): void;
-    logRetrieval(params: RetrievalParams): void;
+    logEvent(event: TraceEvent): void;
 }
 
 declare class Logger {
@@ -75,4 +79,4 @@ declare class Hamming extends HttpClient {
     _logger: Logger;
 }
 
-export { Datasets as D, Experiments as E, Hamming as H, Logger as L, Monitoring as M, Tracing as T };
+export { Datasets as D, Experiments as E, Hamming as H, Logger as L, Monitoring as M, TracerBase as T, Tracing as a };
