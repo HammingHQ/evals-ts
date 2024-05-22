@@ -143,6 +143,7 @@ interface MonitoringItem {
     setOutput(output: OutputType): void;
     setMetadata(metadata: MetadataType): void;
     end(error?: boolean, errorMessage?: string): void;
+    tracing: ITracing;
 }
 declare enum MonitoringItemStatus {
     STARTED = "STARTED",
