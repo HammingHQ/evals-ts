@@ -165,6 +165,7 @@ export interface MonitoringItem {
   setOutput(output: OutputType): void;
   setMetadata(metadata: MetadataType): void;
   end(error?: boolean, errorMessage?: string): void;
+  tracing: ITracing;
 }
 
 export enum MonitoringItemStatus {
