@@ -1,6 +1,9 @@
-import { randomUUID } from "crypto";
-
-import type { Hamming, RunContext, TraceEvent } from "../index";
+import type {
+  Hamming,
+  MonitoringStartOpts,
+  RunContext,
+  TraceEvent,
+} from "../index";
 
 import {
   MonitoringItem as IMonitoringItem,
@@ -16,6 +19,13 @@ import {
 } from "../types";
 import { asyncRunContext } from "../asyncStorage";
 import { TracerBase } from "./tracing";
+
+enum MonitoringState {
+  STARTED,
+  STOPPED,
+}
+
+const INVALID_SESSION_ID = "INVALID_SESSION";
 
 function newRunContext(seqId: number): RunContext {
   return {
@@ -39,6 +49,7 @@ class MonitoringItemTracing extends TracerBase implements ITracing {
 
   logEvent(event: TraceEvent) {
     const trace = this.client.monitoring._getTraceContext(this.runCtx);
+    if (!trace) return;
     this.client.tracing._logLiveTrace({
       event,
       ...trace,
@@ -127,33 +138,35 @@ class MonitoringItem implements IMonitoringItem {
 
 export class Monitoring {
   client: Hamming;
+  private state: MonitoringState = MonitoringState.STOPPED;
   private session: MonitoringSession | null;
+  private monitoringStartOpts: MonitoringStartOpts | undefined;
 
   constructor(client: Hamming) {
     this.client = client;
   }
 
-  start() {
-    console.log("Monitoring started!");
-    if (!this.session) {
-      this.session = {
-        id: randomUUID(),
-        seqId: 0,
-      };
-    }
+  start(opts?: MonitoringStartOpts) {
+    // Delay creating session until the first async call of runItem
+    this.monitoringStartOpts = opts;
     this.client._logger.start();
     this.client.tracing._setMode(TracingMode.MONITORING);
+    this.state = MonitoringState.STARTED;
+    console.log("Monitoring started!");
   }
 
   stop() {
     this.session = null;
     this.client.tracing._setMode(TracingMode.OFF);
     this.client._logger.stop();
+    this.state = MonitoringState.STOPPED;
+    console.log("Monitoring stopped!");
   }
 
   async runItem(
     callback: (item: IMonitoringItem) => unknown | Promise<unknown>,
   ): Promise<unknown> {
+    await this._createSessionIfNotExist();
     const [sessionId, seqId] = this._nextSeqId();
 
     const item = new MonitoringItem(this.client, sessionId, seqId);
@@ -184,7 +197,8 @@ export class Monitoring {
     }
   }
 
-  startItem(): IMonitoringItem {
+  async startItem(): Promise<IMonitoringItem> {
+    await this._createSessionIfNotExist();
     const [sessionId, seqId] = this._nextSeqId();
 
     const item = new MonitoringItem(this.client, sessionId, seqId);
@@ -193,10 +207,16 @@ export class Monitoring {
   }
 
   _endItem(trace: MonitoringTrace) {
+    if (this.state === MonitoringState.STOPPED) {
+      return;
+    }
     this.client.tracing._logLiveTrace(trace);
   }
 
-  _getTraceContext(ctx?: RunContext): MonitoringTraceContext {
+  _getTraceContext(ctx?: RunContext): MonitoringTraceContext | null {
+    if (this.state === MonitoringState.STOPPED) {
+      return null;
+    }
     if (!this.session) throw Error("Monitoring not started");
 
     const [sessionId, seqId] = this._nextSeqId();
@@ -210,10 +230,33 @@ export class Monitoring {
   }
 
   private _nextSeqId(): [string, number] {
+    if (this.state === MonitoringState.STOPPED) {
+      return [INVALID_SESSION_ID, 0];
+    }
     if (!this.session) {
       throw Error("Monitoring not started");
     }
     this.session.seqId += 1;
     return [this.session.id, this.session.seqId];
+  }
+
+  private async _createSessionIfNotExist() {
+    if (this.state === MonitoringState.STOPPED) {
+      return;
+    }
+    if (this.session) return;
+    const environment =
+      this.monitoringStartOpts?.environment ?? process.env.NODE_ENV;
+    const resp = await this.client.fetch("/sessions", {
+      method: "POST",
+      body: JSON.stringify({
+        metadata: environment ? { environment } : {},
+      }),
+    });
+    const data = await resp.json();
+    this.session = {
+      id: data.id,
+      seqId: 0,
+    };
   }
 }
