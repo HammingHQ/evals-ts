@@ -150,6 +150,14 @@ declare enum MonitoringItemStatus {
     COMPLETED = "COMPLETED",
     FAILED = "FAILED"
 }
+declare enum SessionEnvironment {
+    DEVELOPMENT = "development",
+    STAGING = "staging",
+    PRODUCTION = "production"
+}
+interface MonitoringStartOpts {
+    environment?: SessionEnvironment;
+}
 interface MonitoringSession {
     id: string;
     seqId: number;
@@ -238,4 +246,4 @@ declare enum LabelColor {
     Red = "red"
 }
 
-export { type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationParams, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreType, ScorerExecutionType, type ScoringFunction, type Trace, type TraceEvent, TracingMode };
+export { type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationParams, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringStartOpts, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreType, ScorerExecutionType, type ScoringFunction, SessionEnvironment, type Trace, type TraceEvent, TracingMode };

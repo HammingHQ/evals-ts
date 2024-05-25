@@ -1,4 +1,4 @@
-import { DatasetId, DatasetWithItems, Dataset, CreateDatasetOptions, RunOptions, Runner, MonitoringItem, MonitoringTrace, RunContext, MonitoringTraceContext, ITracing, TraceEvent, GenerationParams, RetrievalParams, TracingMode, LogMessage, ClientOptions } from './types.cjs';
+import { DatasetId, DatasetWithItems, Dataset, CreateDatasetOptions, RunOptions, Runner, MonitoringStartOpts, MonitoringItem, MonitoringTrace, RunContext, MonitoringTraceContext, ITracing, TraceEvent, GenerationParams, RetrievalParams, TracingMode, LogMessage, ClientOptions } from './types.cjs';
 import { HttpClient } from './httpClient.cjs';
 
 declare class Datasets {
@@ -23,15 +23,18 @@ declare class Experiments {
 
 declare class Monitoring {
     client: Hamming;
+    private state;
     private session;
+    private monitoringStartOpts;
     constructor(client: Hamming);
-    start(): void;
+    start(opts?: MonitoringStartOpts): void;
     stop(): void;
     runItem(callback: (item: MonitoringItem) => unknown | Promise<unknown>): Promise<unknown>;
-    startItem(): MonitoringItem;
+    startItem(): Promise<MonitoringItem>;
     _endItem(trace: MonitoringTrace): void;
-    _getTraceContext(ctx?: RunContext): MonitoringTraceContext;
+    _getTraceContext(ctx?: RunContext): MonitoringTraceContext | null;
     private _nextSeqId;
+    private _createSessionIfNotExist;
 }
 
 declare abstract class TracerBase implements ITracing {
