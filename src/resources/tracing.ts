@@ -149,6 +149,9 @@ export class Tracing extends TracerBase implements ITracing {
       this.collected[itemId].push(event);
     } else if (this.mode === TracingMode.MONITORING) {
       const trace = this.client.monitoring._getTraceContext(runCtx);
+      if (!trace) {
+        return;
+      }
       this._logLiveTrace({
         event,
         ...trace,

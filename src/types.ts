@@ -174,6 +174,16 @@ export enum MonitoringItemStatus {
   FAILED = "FAILED",
 }
 
+export enum SessionEnvironment {
+  DEVELOPMENT = "development",
+  STAGING = "staging",
+  PRODUCTION = "production",
+}
+
+export interface MonitoringStartOpts {
+  environment?: SessionEnvironment;
+}
+
 export interface MonitoringSession {
   id: string;
   seqId: number;
