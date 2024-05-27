@@ -276,6 +276,8 @@ export interface CustomScoringConfig {
   key_name: string;
 }
 
+export const ScoringErrorValue = -1;
+
 export enum LabelColor {
   Gray = "gray",
   LightGreen = "light-green",

@@ -17,6 +17,7 @@ import {
   RunOptions,
   Score,
   ScoreType,
+  ScoringErrorValue,
   ScoringFunction,
   TracingMode,
 } from "../types";
@@ -283,8 +284,32 @@ class ScoringHelper {
       .filter((f) => f.scorer.type === "local")
       .map(async (f) => {
         const scorer = f.scorer as LocalScorer;
-        const score = await scorer.scoreFn({ input, output, expected });
-        scores[f.registration.key_name] = score;
+
+        try {
+          scores[f.registration.key_name] = await scorer.scoreFn({
+            input,
+            output,
+            expected,
+          });
+        } catch (err) {
+          console.error(
+            `\nFailed to locally run score ${f.name.toLowerCase()}.`,
+            "\nNote: This error will be displayed in the dashboard. All other scoring will be preserved and displayed accordingly.",
+            "\nError received:",
+            err,
+            "\nFailing item object for reference:",
+            {
+              input,
+              expected,
+              output,
+            },
+            "\n\n",
+          );
+          scores[f.registration.key_name] = {
+            value: ScoringErrorValue,
+            reason: err.message,
+          };
+        }
       });
     await Promise.allSettled(promises);
     return scores;
