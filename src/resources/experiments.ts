@@ -17,6 +17,7 @@ import {
   RunOptions,
   Score,
   ScoreType,
+  ScoringErrorPrefix,
   ScoringErrorValue,
   ScoringFunction,
   TracingMode,
@@ -293,21 +294,14 @@ class ScoringHelper {
           });
         } catch (err) {
           console.error(
-            `\nFailed to locally run score ${f.name.toLowerCase()}.`,
-            "\nNote: This error will be displayed in the dashboard. All other scoring will be preserved and displayed accordingly.",
-            "\nError received:",
+            `Failed to locally run score ${f.name.toLowerCase()}.`,
+            "Note: This error will be displayed in the dashboard. All other scoring will be preserved and displayed accordingly.",
+            "Error received:",
             err,
-            "\nFailing item object for reference:",
-            {
-              input,
-              expected,
-              output,
-            },
-            "\n\n",
           );
           scores[f.registration.key_name] = {
             value: ScoringErrorValue,
-            reason: err.message,
+            reason: `${ScoringErrorPrefix}${err.message}`,
           };
         }
       });

@@ -278,6 +278,8 @@ export interface CustomScoringConfig {
 
 export const ScoringErrorValue = -1;
 
+export const ScoringErrorPrefix = "<!--hamming_scoring_error-->";
+
 export enum LabelColor {
   Gray = "gray",
   LightGreen = "light-green",
