@@ -1,5 +1,19 @@
-import { DatasetId, DatasetWithItems, Dataset, CreateDatasetOptions, RunOptions, Runner, MonitoringStartOpts, MonitoringItem, MonitoringTrace, RunContext, MonitoringTraceContext, ITracing, TraceEvent, GenerationParams, RetrievalParams, TracingMode, LogMessage, ClientOptions } from './types.cjs';
-import { HttpClient } from './httpClient.cjs';
+import { LogMessage, DatasetId, DatasetWithItems, Dataset, CreateDatasetOptions, RunOptions, Runner, MonitoringStartOpts, MonitoringItem, MonitoringTrace, RunContext, MonitoringTraceContext, ITracing, TraceEvent, GenerationParams, RetrievalParams, TracingMode, Prompt, ClientOptions } from './types.js';
+import { HttpClient } from './httpClient.js';
+
+declare class Logger {
+    private client;
+    private queue;
+    private stopped;
+    private queueHasMessages;
+    constructor(client: Hamming);
+    log(message: LogMessage): void;
+    start(): Promise<void>;
+    stop(): void;
+    private _drainQueue;
+    private _processQueue;
+    private _publish;
+}
 
 declare class Datasets {
     private client;
@@ -59,18 +73,11 @@ declare class Tracing extends TracerBase implements ITracing {
     logEvent(event: TraceEvent): void;
 }
 
-declare class Logger {
-    private client;
-    private queue;
-    private stopped;
-    private queueHasMessages;
+declare class Prompts {
+    private readonly client;
     constructor(client: Hamming);
-    log(message: LogMessage): void;
-    start(): Promise<void>;
-    stop(): void;
-    private _drainQueue;
-    private _processQueue;
-    private _publish;
+    list(): Promise<Prompt[]>;
+    get(slug: string, label?: string, version?: string): Promise<Prompt>;
 }
 
 declare class Hamming extends HttpClient {
@@ -79,7 +86,8 @@ declare class Hamming extends HttpClient {
     datasets: Datasets;
     tracing: Tracing;
     monitoring: Monitoring;
+    prompts: Prompts;
     _logger: Logger;
 }
 
-export { Datasets as D, Experiments as E, Hamming as H, Logger as L, Monitoring as M, TracerBase as T, Tracing as a };
+export { Datasets as D, Experiments as E, Hamming as H, Logger as L, Monitoring as M, Prompts as P, TracerBase as T, Tracing as a };

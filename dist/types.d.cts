@@ -232,6 +232,8 @@ interface CustomScoringConfig {
     id: string;
     key_name: string;
 }
+declare const ScoringErrorValue = -1;
+declare const ScoringErrorPrefix = "<!--hamming_scoring_error-->";
 declare enum LabelColor {
     Gray = "gray",
     LightGreen = "light-green",
@@ -245,5 +247,30 @@ declare enum LabelColor {
     Blue = "blue",
     Red = "red"
 }
+interface Prompt {
+    slug: string;
+}
+interface ToolChoice {
+    choice: string;
+    functionName: string;
+}
+interface PromptSettings {
+    temperature?: number;
+    maxTokens?: number;
+    topP?: number;
+    frequencyPenalty?: number;
+    presencePenalty?: number;
+    toolChoice?: ToolChoice;
+}
+interface ChatMessage {
+    role: string;
+    content: string;
+}
+interface PromptContent {
+    languageModel: string;
+    promptSettings: PromptSettings;
+    chatMessages: ChatMessage[];
+    tools?: Record<string, string>;
+}
 
-export { type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationParams, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringStartOpts, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreType, ScorerExecutionType, type ScoringFunction, SessionEnvironment, type Trace, type TraceEvent, TracingMode };
+export { type ChatMessage, type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationParams, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringStartOpts, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type Prompt, type PromptContent, type PromptSettings, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreType, ScorerExecutionType, ScoringErrorPrefix, ScoringErrorValue, type ScoringFunction, SessionEnvironment, type ToolChoice, type Trace, type TraceEvent, TracingMode };
