@@ -4,6 +4,7 @@ import { Datasets } from "./resources/datasets";
 import { Experiments } from "./resources/experiments";
 import { Monitoring } from "./resources/monitoring";
 import { Tracing } from "./resources/tracing";
+import { Prompts } from "./resources/prompts";
 import { ClientOptions } from "./types";
 
 const CLIENT_OPTIONS_KEYS: (keyof ClientOptions)[] = ["apiKey", "baseURL"];
@@ -34,6 +35,7 @@ export class Hamming extends HttpClient {
   datasets = new Datasets(this);
   tracing = new Tracing(this);
   monitoring = new Monitoring(this);
+  prompts = new Prompts(this);
 
   _logger = new Logger(this);
 }

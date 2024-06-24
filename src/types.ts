@@ -293,3 +293,62 @@ export enum LabelColor {
   Blue = "blue",
   Red = "red",
 }
+
+export interface Prompt {
+  slug: string;
+}
+
+export interface ToolChoice {
+  choice: string;
+  functionName: string;
+}
+
+export interface PromptSettings {
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+  toolChoice?: ToolChoice;
+}
+
+export interface ChatMessage {
+  role: string;
+  content: string;
+}
+
+export interface PromptContent {
+  languageModel: string;
+  promptSettings: PromptSettings;
+  chatMessages: ChatMessage[];
+  tools?: Record<string, string>;
+}
+
+// export class PromptTemplate {
+//   readonly variables: Array<string>;
+
+//   constructor(
+//     public readonly slug: string,
+//     public readonly content: PromptContent,
+//   ) {
+//     this.variables = this.extractVariables(content.chatMessages);
+//   }
+
+//   private extractVariables(messages: ChatMessage[]) {
+//     const matches = messages.map((message) => message.content).join("\n");
+//     return matches.match(/\{\{([^}]+)\}\}/g);
+//   }
+
+//   private extractVariables(prompt: string) {
+//     const matches = prompt.match(/\{\{([^}]+)\}\}/g);
+//     return matches
+//       ? matches.map((match) => match.replace(/\{\{([^}]+)\}\}/g, "$1"))
+//       : [];
+//   }
+
+//   compile(variables: Record<string, string>): string {
+//     return this.prompt.replace(/\{\{([^}]+)\}\}/g, (match, p1) => {
+//       return variables[p1] || match;
+//     });
+//   }
+// }
