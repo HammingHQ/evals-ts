@@ -1,12 +1,12 @@
 import type { Hamming } from "../client";
-import { Prompt } from "../types";
+import { Prompt, PromptContent } from "../types";
 
 interface ListPromptsResponse {
   prompts: Prompt[];
 }
 
 interface GetPromptResponse {
-  prompt: Prompt;
+  prompt: Prompt & PromptContent;
 }
 
 export class Prompts {

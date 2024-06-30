@@ -1,2 +1,0 @@
-"use strict";Object.defineProperty(exports, "__esModule", {value: true});var o=class{constructor(t){this.client=t}async list(){return(await(await this.client.fetch("/prompts")).json()).prompts}async get(t,r,p){let s=`/prompts/${t}`;return r&&(s+=`?label=${r}`),p&&(s+=`&version=${p}`),(await(await this.client.fetch(s)).json()).prompt}};exports.a = o;
-//# sourceMappingURL=chunk-SAY3HHIG.cjs.map

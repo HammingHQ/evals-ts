@@ -1,2 +1,2 @@
-import{a}from"../chunk-IDSATM7M.js";import"../chunk-GQSCBKA6.js";export{a as Prompts};
+import{a}from"../chunk-W67F3JPX.js";import"../chunk-GQSCBKA6.js";export{a as Prompts};
 //# sourceMappingURL=prompts.js.map
