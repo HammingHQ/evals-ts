@@ -61,7 +61,15 @@ export abstract class TracerBase implements ITracing {
   }
 
   logGeneration(params: GenerationParams): void {
-    this.log(this._generationEvent(params));
+    const updatedParams: GenerationParams = {
+      ...params,
+      metadata: {
+        ...params.metadata,
+        // Error is true if either error or error_message is set, false otherwise
+        error: params.metadata?.error || !!params.metadata?.error_message,
+      },
+    };
+    this.log(this._generationEvent(updatedParams));
   }
 
   logRetrieval(params: RetrievalParams): void {
