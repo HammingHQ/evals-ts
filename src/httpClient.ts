@@ -96,7 +96,7 @@ export class HttpClient {
 
     if (resp.status === UNAUTHORIZED) {
       throw new Error(
-        `Unauthorized. Please check that your HAMMING API key is correct by visiting: https://app.hamming.ai/settings`,
+        `Unauthorized. Please check that your HAMMING_API_KEY is correct by visiting: https://app.hamming.ai/settings`,
       );
     }
 

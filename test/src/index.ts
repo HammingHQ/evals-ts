@@ -12,7 +12,7 @@ export const env = envsafe({
 
 const hamming = new Hamming({
   baseURL: env.HAMMING_BASE_URL,
-  apiKey: env.HAMMING_API_KEY + "123",
+  apiKey: env.HAMMING_API_KEY,
 });
 
 const trace = hamming.tracing;
