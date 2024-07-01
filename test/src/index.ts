@@ -212,7 +212,6 @@ async function runMonitoring() {
           total_tokens: 110,
         },
         duration_ms: 510,
-        error: false,
       },
     });
 
@@ -227,8 +226,8 @@ async function runMonitoring() {
 async function run() {
   // await createLargeDataset(hamming, 1000);
   // await runExperiment();
-  // await simpleRagExample();
-  await runMonitoring();
+  await simpleRagExample();
+  // await runMonitoring();
 }
 
 run().catch((err) => {
