@@ -137,6 +137,7 @@ export interface RetrievalParams {
   results?: Document[] | string[];
   metadata?: {
     engine?: string;
+    [key: string]: any;
   };
 }
 
