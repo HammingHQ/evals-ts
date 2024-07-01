@@ -12,7 +12,7 @@ export const env = envsafe({
 
 const hamming = new Hamming({
   baseURL: env.HAMMING_BASE_URL,
-  apiKey: env.HAMMING_API_KEY,
+  apiKey: env.HAMMING_API_KEY + "123",
 });
 
 const trace = hamming.tracing;
@@ -212,7 +212,6 @@ async function runMonitoring() {
           total_tokens: 110,
         },
         duration_ms: 510,
-        error: false,
       },
     });
 
@@ -227,8 +226,8 @@ async function runMonitoring() {
 async function run() {
   // await createLargeDataset(hamming, 1000);
   // await runExperiment();
-  // await simpleRagExample();
-  await runMonitoring();
+  await simpleRagExample();
+  // await runMonitoring();
 }
 
 run().catch((err) => {

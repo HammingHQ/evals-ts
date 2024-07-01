@@ -2,6 +2,7 @@ import FetchClient from "./fetchClient";
 
 const TOO_MANY_REQUESTS = 429;
 const INTERNAL_SERVER_ERROR = 500;
+const UNAUTHORIZED = 401;
 
 interface HttpClientOptions {
   apiKey: string;
@@ -92,6 +93,12 @@ export class HttpClient {
         return Math.pow(2, attempt) * 1000;
       },
     });
+
+    if (resp.status === UNAUTHORIZED) {
+      throw new Error(
+        `Unauthorized. Please check that your HAMMING API key is correct by visiting: https://app.hamming.ai/settings`,
+      );
+    }
 
     if (isDebug) {
       console.debug(`Response for ${url}: ${resp.status} ${resp.statusText}\n`);

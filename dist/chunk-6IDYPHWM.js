@@ -1,0 +1,7 @@
+import{a as p}from"./chunk-TZ55H3QO.js";import{a as t}from"./chunk-GQSCBKA6.js";var f=429,y=500,g=401,l=class{constructor(e){t(this,"apiKey");t(this,"baseURL");t(this,"fetchClient");t(this,"debug",!1);t(this,"retries",3);this.apiKey=e.apiKey,this.baseURL=this.sanitizeBaseUrl(e.baseURL),this.fetchClient=new p,this.debug=process.env.NODE_ENV==="development"}sanitizeBaseUrl(e){return e.trim().replace(/\/$/,"")}async fetch(e,o){let c=this.baseURL+e,s={...o,headers:{...o?.headers,"Content-Type":o?.headers?.["Content-Type"]??"application/json",authorization:`Bearer ${this.apiKey}`}},h=this.debug;h&&console.debug(`
+Fetching URL: ${c}
+Method: ${s.method||"GET"}${s.body?`
+Body: ${s.body}`:""}
+Headers: ${JSON.stringify(s.headers,null,2)}`);let d=this.retries,r=await this.fetchClient.fetchRetry(c,{...s,retryOn:function(i,u,a){if(i>=d)return!1;let n=a?.status;return u instanceof TypeError||n===f||n!==void 0&&n>=y},retryDelay:function(i,u,a,n){return console.warn(`Fetch attempt #${i}: input=${n}, error=${u?.message}, response status=${a?.status}, response status text=${a?.statusText}`),Math.pow(2,i)*1e3}});if(r.status===g)throw new Error("Unauthorized. Please check that your HAMMING API key is correct by visiting: https://app.hamming.ai/settings");return h&&console.debug(`Response for ${c}: ${r.status} ${r.statusText}
+`),r}};export{l as a};
+//# sourceMappingURL=chunk-6IDYPHWM.js.map
