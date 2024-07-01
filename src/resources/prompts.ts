@@ -6,7 +6,7 @@ interface ListPromptsResponse {
 }
 
 interface GetPromptResponse {
-  prompt: Prompt & PromptContent;
+  prompt: Prompt & { content: PromptContent };
 }
 
 export class Prompts {
