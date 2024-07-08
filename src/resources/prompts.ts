@@ -1,12 +1,12 @@
 import type { Hamming } from "../client";
-import { Prompt, PromptContent } from "../types";
+import { Prompt, PromptWithContent } from "../types";
 
 interface ListPromptsResponse {
   prompts: Prompt[];
 }
 
 interface GetPromptResponse {
-  prompt: Prompt & { content: PromptContent };
+  prompt: PromptWithContent;
 }
 
 export class Prompts {
@@ -18,7 +18,11 @@ export class Prompts {
     return prompts.prompts;
   }
 
-  async get(slug: string, label?: string, version?: string): Promise<Prompt> {
+  async get(
+    slug: string,
+    label?: string,
+    version?: string,
+  ): Promise<PromptWithContent> {
     let url = `/prompts/${slug}`;
     if (label) {
       url += `?label=${label}`;

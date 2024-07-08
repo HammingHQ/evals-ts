@@ -325,6 +325,10 @@ export interface PromptContent {
   tools?: Record<string, string>;
 }
 
+export interface PromptWithContent extends Prompt {
+  content?: PromptContent;
+}
+
 // export class PromptTemplate {
 //   readonly variables: Array<string>;
 
