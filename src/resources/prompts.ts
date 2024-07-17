@@ -12,8 +12,12 @@ interface GetPromptResponse {
 export class Prompts {
   constructor(private readonly client: Hamming) {}
 
-  async list(): Promise<Prompt[]> {
-    const resp = await this.client.fetch("/prompts");
+  async list(label?: string): Promise<Prompt[]> {
+    let url = "/prompts";
+    if (label) {
+      url += `?label=${label}`;
+    }
+    const resp = await this.client.fetch(url);
     const prompts = (await resp.json()) as ListPromptsResponse;
     return prompts.prompts;
   }
