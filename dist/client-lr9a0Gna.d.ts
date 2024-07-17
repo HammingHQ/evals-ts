@@ -1,5 +1,5 @@
-import { LogMessage, DatasetId, DatasetWithItems, Dataset, CreateDatasetOptions, RunOptions, Runner, MonitoringStartOpts, MonitoringItem, MonitoringTrace, RunContext, MonitoringTraceContext, ITracing, TraceEvent, GenerationParams, RetrievalParams, TracingMode, Prompt, PromptWithContent, ClientOptions } from './types.js';
 import { HttpClient } from './httpClient.js';
+import { LogMessage, DatasetId, DatasetWithItems, Dataset, CreateDatasetOptions, RunOptions, Runner, MonitoringStartOpts, MonitoringItem, MonitoringTrace, RunContext, MonitoringTraceContext, ITracing, TraceEvent, GenerationParams, RetrievalParams, TracingMode, Prompt, PromptWithContent, ClientOptions } from './types.js';
 
 declare class Logger {
     private client;
@@ -76,7 +76,7 @@ declare class Tracing extends TracerBase implements ITracing {
 declare class Prompts {
     private readonly client;
     constructor(client: Hamming);
-    list(): Promise<Prompt[]>;
+    list(label?: string): Promise<Prompt[]>;
     get(slug: string, label?: string, version?: string): Promise<PromptWithContent>;
 }
 
