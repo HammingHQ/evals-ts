@@ -1,4 +1,4 @@
-export { P as Prompts } from '../client--KL-9mMJ.js';
+export { P as Prompts } from '../client-lr9a0Gna.js';
 import '../types.js';
 import '../httpClient.js';
 import '../fetchClient.js';
