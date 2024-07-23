@@ -1,2 +1,0 @@
-import{a as e}from"./chunk-GQSCBKA6.js";var t=class{constructor(s=!1){e(this,"isSet");e(this,"waiters");this.isSet=s,this.waiters=[],s&&this.resolveWaiters()}set(){this.isSet=!0,this.resolveWaiters()}reset(){this.isSet=!1}wait(){return this.isSet?Promise.resolve():new Promise(s=>{this.waiters.push(s)})}resolveWaiters(){this.waiters.forEach(s=>s()),this.waiters=[]}};export{t as a};
-//# sourceMappingURL=chunk-4DTMREEV.js.map
