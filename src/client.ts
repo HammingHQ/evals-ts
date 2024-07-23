@@ -8,7 +8,11 @@ import { Prompts } from "./resources/prompts";
 import { ClientOptions } from "./types";
 import OpenAIClient from "./resources/openai-client";
 
-const CLIENT_OPTIONS_KEYS: (keyof ClientOptions)[] = ["apiKey", "baseURL"];
+const CLIENT_OPTIONS_KEYS: (keyof ClientOptions)[] = [
+  "apiKey",
+  "baseURL",
+  "openaiApiKey",
+];
 
 export class Hamming extends HttpClient {
   openaiApiKey?: string;
