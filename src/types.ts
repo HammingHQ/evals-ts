@@ -93,6 +93,7 @@ export type Runner = (input: InputType) => Promise<OutputType>;
 export interface ClientOptions {
   apiKey: string;
   baseURL?: string;
+  openaiApiKey?: string;
 }
 
 export interface CreateDatasetOptions {
@@ -322,7 +323,7 @@ export interface PromptContent {
   languageModel: string;
   promptSettings: PromptSettings;
   chatMessages: ChatMessage[];
-  tools?: Record<string, string>;
+  tools?: string;
 }
 
 export interface PromptWithContent extends Prompt {
