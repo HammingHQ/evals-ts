@@ -94,6 +94,7 @@ export interface ClientOptions {
   apiKey: string;
   baseURL?: string;
   openaiApiKey?: string;
+  anthropicApiKey?: string;
 }
 
 export interface CreateDatasetOptions {
