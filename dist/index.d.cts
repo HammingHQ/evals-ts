@@ -1,6 +1,9 @@
+import { Anthropic } from '@anthropic-ai/sdk';
+import { Message, RawMessageStreamEvent } from '@anthropic-ai/sdk/resources/messages.mjs';
+import { Stream } from '@anthropic-ai/sdk/streaming.mjs';
 import OpenAI from 'openai';
 import { ChatCompletion, ChatCompletionChunk } from 'openai/resources/chat/completions';
-import { Stream } from 'openai/streaming.mjs';
+import { Stream as Stream$1 } from 'openai/streaming.mjs';
 
 type RequestDelayFunction = (attempt: number, error: Error | null, response: Response | null, input?: string | Request) => number;
 type RequestRetryOnFunction = (attempt: number, error: Error | null, response: Response | null) => boolean | Promise<boolean>;
@@ -137,6 +140,7 @@ interface ClientOptions {
     apiKey: string;
     baseURL?: string;
     openaiApiKey?: string;
+    anthropicApiKey?: string;
 }
 interface CreateDatasetOptions {
     name: string;
@@ -347,6 +351,15 @@ declare class Logger {
     private _publish;
 }
 
+declare class AnthropicClient {
+    private readonly client;
+    private anthropic?;
+    constructor(client: Hamming);
+    load(): Promise<Anthropic>;
+    createMessage(prompt: PromptWithContent, variables?: Record<string, string>): Promise<Message>;
+    createMessageStream(prompt: PromptWithContent, variables?: Record<string, string>): Promise<Stream<RawMessageStreamEvent>>;
+}
+
 declare class Datasets {
     private client;
     constructor(client: Hamming);
@@ -383,6 +396,22 @@ declare class Monitoring {
     private _createSessionIfNotExist;
 }
 
+declare class OpenAIClient {
+    private readonly client;
+    private openai?;
+    constructor(client: Hamming);
+    load(): Promise<OpenAI>;
+    createChatCompletion(prompt: PromptWithContent, variables?: Record<string, string>): Promise<ChatCompletion>;
+    createChatCompletionStream(prompt: PromptWithContent, variables?: Record<string, string>): Promise<Stream$1<ChatCompletionChunk>>;
+}
+
+declare class Prompts {
+    private readonly client;
+    constructor(client: Hamming);
+    list(label?: string): Promise<Prompt[]>;
+    get(slug: string, label?: string, version?: string): Promise<PromptWithContent>;
+}
+
 declare abstract class TracerBase implements ITracing {
     abstract logEvent(event: TraceEvent): void;
     private _generationEvent;
@@ -405,24 +434,9 @@ declare class Tracing extends TracerBase implements ITracing {
     logEvent(event: TraceEvent): void;
 }
 
-declare class Prompts {
-    private readonly client;
-    constructor(client: Hamming);
-    list(label?: string): Promise<Prompt[]>;
-    get(slug: string, label?: string, version?: string): Promise<PromptWithContent>;
-}
-
-declare class OpenAIClient {
-    private readonly client;
-    private openai?;
-    constructor(client: Hamming);
-    load(): Promise<OpenAI>;
-    createChatCompletion(prompt: PromptWithContent, variables?: Record<string, string>): Promise<ChatCompletion>;
-    createChatCompletionStream(prompt: PromptWithContent, variables?: Record<string, string>): Promise<Stream<ChatCompletionChunk>>;
-}
-
 declare class Hamming extends HttpClient {
     openaiApiKey?: string;
+    anthropicApiKey?: string;
     constructor(config: ClientOptions);
     experiments: Experiments;
     datasets: Datasets;
@@ -430,6 +444,7 @@ declare class Hamming extends HttpClient {
     monitoring: Monitoring;
     prompts: Prompts;
     openai: OpenAIClient;
+    anthropic: AnthropicClient;
     _logger: Logger;
 }
 
