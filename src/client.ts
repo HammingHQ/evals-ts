@@ -1,21 +1,24 @@
 import { HttpClient } from "./httpClient";
 import { Logger } from "./logger";
+import AnthropicClient from "./resources/anthropic-client";
 import { Datasets } from "./resources/datasets";
 import { Experiments } from "./resources/experiments";
 import { Monitoring } from "./resources/monitoring";
-import { Tracing } from "./resources/tracing";
-import { Prompts } from "./resources/prompts";
-import { ClientOptions } from "./types";
 import OpenAIClient from "./resources/openai-client";
+import { Prompts } from "./resources/prompts";
+import { Tracing } from "./resources/tracing";
+import { ClientOptions } from "./types";
 
 const CLIENT_OPTIONS_KEYS: (keyof ClientOptions)[] = [
   "apiKey",
   "baseURL",
   "openaiApiKey",
+  "anthropicApiKey",
 ];
 
 export class Hamming extends HttpClient {
   openaiApiKey?: string;
+  anthropicApiKey?: string;
 
   constructor(config: ClientOptions) {
     const unexpectedConfigKeys = Object.keys(config).filter(
@@ -38,6 +41,7 @@ export class Hamming extends HttpClient {
     });
 
     this.openaiApiKey = config.openaiApiKey;
+    this.anthropicApiKey = config.anthropicApiKey;
   }
 
   experiments = new Experiments(this);
@@ -46,6 +50,7 @@ export class Hamming extends HttpClient {
   monitoring = new Monitoring(this);
   prompts = new Prompts(this);
   openai = new OpenAIClient(this);
+  anthropic = new AnthropicClient(this);
 
   _logger = new Logger(this);
 }
