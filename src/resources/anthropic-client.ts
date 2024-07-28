@@ -95,9 +95,10 @@ function createMessageParams(
     top_p: content.promptSettings.topP,
     temperature: content.promptSettings.temperature,
     tools: content.tools ? (JSON.parse(content.tools) as Tool[]) : undefined,
-    tool_choice: content.promptSettings.toolChoice
-      ? convertAnthropicToolChoice(content.promptSettings.toolChoice)
-      : undefined,
+    tool_choice:
+      content.promptSettings.toolChoice && content.tools
+        ? convertAnthropicToolChoice(content.promptSettings.toolChoice)
+        : undefined,
   };
 }
 
