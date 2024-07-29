@@ -254,17 +254,25 @@ interface RemoteScorer {
   type: ScorerExecutionType.Remote;
 }
 
-interface OpenAIModelConfig {
-  model: string;
-  temperature?: number;
-  seed?: number;
-  maxTokens?: number;
+interface PromptConfig {
+  slug: string;
+  label?: string;
+}
+
+export enum ScoreParserType {
+  XML = "xml",
+  JSON = "json",
+}
+
+interface ScoreParserConfig {
+  type: ScoreParserType;
 }
 
 export interface LLMClassifyScorer extends RemoteScorer {
-  provider: LLMProvider;
-  config: OpenAIModelConfig;
-  promptTemplate: string;
+  method: "classify";
+  prompt: PromptConfig;
+  variableMappings?: Record<string, string>;
+  scoreParser: ScoreParserConfig;
 }
 
 export interface ScoringFunction {
