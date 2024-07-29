@@ -86,9 +86,10 @@ function createChatCompletionParams(
     top_p: content.promptSettings.topP,
     frequency_penalty: content.promptSettings.frequencyPenalty,
     presence_penalty: content.promptSettings.presencePenalty,
-    tool_choice: content.promptSettings.toolChoice
-      ? convertToolChoice(content.promptSettings.toolChoice)
-      : undefined,
+    tool_choice:
+      content.promptSettings.toolChoice && content.tools
+        ? convertToolChoice(content.promptSettings.toolChoice)
+        : undefined,
     tools: content.tools ? JSON.parse(content.tools) : undefined,
   };
 }
