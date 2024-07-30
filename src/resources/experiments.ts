@@ -16,6 +16,7 @@ import {
   Runner,
   RunOptions,
   Score,
+  ScorerExecutionType,
   ScoreType,
   ScoringErrorPrefix,
   ScoringErrorValue,
@@ -314,7 +315,7 @@ class ScoringHelper {
       name: scoringFunc.name,
       version: scoringFunc.version,
       score_config: scoringFunc.scoreConfig,
-      execution_config: {},
+      execution_config: getExecutionConfig(scoringFunc),
     }));
     const resp = await this.client.fetch(`/scoring/register-functions`, {
       method: "POST",
@@ -332,4 +333,16 @@ class ScoringHelper {
       }),
     );
   }
+}
+
+function getExecutionConfig(scoringFunc: ScoringFunction): Record<string, any> {
+  if (scoringFunc.scorer.type === ScorerExecutionType.Remote) {
+    const { prompt, variableMappings, scoreParser } = scoringFunc.scorer;
+    return {
+      prompt,
+      variableMappings,
+      scoreParser,
+    };
+  }
+  return {};
 }
