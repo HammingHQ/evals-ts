@@ -272,16 +272,22 @@ interface LocalScorer {
 interface RemoteScorer {
     type: ScorerExecutionType.Remote;
 }
-interface OpenAIModelConfig {
-    model: string;
-    temperature?: number;
-    seed?: number;
-    maxTokens?: number;
+interface PromptConfig {
+    slug: string;
+    label?: string;
+}
+declare enum ScoreParserType {
+    XML = "xml",
+    JSON = "json"
+}
+interface ScoreParserConfig {
+    type: ScoreParserType;
 }
 interface LLMClassifyScorer extends RemoteScorer {
-    provider: LLMProvider;
-    config: OpenAIModelConfig;
-    promptTemplate: string;
+    method: "classify";
+    prompt: PromptConfig;
+    variableMappings?: Record<string, string>;
+    scoreParser: ScoreParserConfig;
 }
 interface ScoringFunction {
     name: string;
@@ -456,4 +462,4 @@ declare class PromptTemplate {
     compile(values: Record<string, string>): PromptContent;
 }
 
-export { type ChatMessage, type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationParams, Hamming, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringStartOpts, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type Prompt, type PromptContent, type PromptSettings, PromptTemplate, type PromptWithContent, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreType, ScorerExecutionType, ScoringErrorPrefix, ScoringErrorValue, type ScoringFunction, SessionEnvironment, type ToolChoice, type Trace, type TraceEvent, TracingMode };
+export { type ChatMessage, type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationParams, Hamming, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringStartOpts, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type Prompt, type PromptContent, type PromptSettings, PromptTemplate, type PromptWithContent, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreParserType, ScoreType, ScorerExecutionType, ScoringErrorPrefix, ScoringErrorValue, type ScoringFunction, SessionEnvironment, type ToolChoice, type Trace, type TraceEvent, TracingMode };
