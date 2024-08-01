@@ -1,6 +1,7 @@
 import { HttpClient } from "./httpClient";
 import { Logger } from "./logger";
 import AnthropicClient from "./resources/anthropic-client";
+import AnthropicBedrockClient from "./resources/anthropic-bedrock-client";
 import { Datasets } from "./resources/datasets";
 import { Experiments } from "./resources/experiments";
 import { Monitoring } from "./resources/monitoring";
@@ -14,11 +15,18 @@ const CLIENT_OPTIONS_KEYS: (keyof ClientOptions)[] = [
   "baseURL",
   "openaiApiKey",
   "anthropicApiKey",
+  "bedrock",
 ];
 
 export class Hamming extends HttpClient {
   openaiApiKey?: string;
   anthropicApiKey?: string;
+  bedrock?: {
+    awsSecretKey?: string;
+    awsAccessKey?: string;
+    awsRegion?: string;
+    awsSessionToken?: string;
+  };
 
   constructor(config: ClientOptions) {
     const unexpectedConfigKeys = Object.keys(config).filter(
@@ -42,6 +50,7 @@ export class Hamming extends HttpClient {
 
     this.openaiApiKey = config.openaiApiKey;
     this.anthropicApiKey = config.anthropicApiKey;
+    this.bedrock = config.bedrock;
   }
 
   experiments = new Experiments(this);
@@ -51,6 +60,7 @@ export class Hamming extends HttpClient {
   prompts = new Prompts(this);
   openai = new OpenAIClient(this);
   anthropic = new AnthropicClient(this);
+  anthropicBedrock = new AnthropicBedrockClient(this);
 
   _logger = new Logger(this);
 }
