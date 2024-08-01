@@ -1,6 +1,7 @@
 import { Anthropic } from '@anthropic-ai/sdk';
 import { Message, RawMessageStreamEvent } from '@anthropic-ai/sdk/resources/messages.mjs';
 import { Stream } from '@anthropic-ai/sdk/streaming.mjs';
+import { AnthropicBedrock } from '@anthropic-ai/bedrock-sdk';
 import OpenAI from 'openai';
 import { ChatCompletion, ChatCompletionChunk } from 'openai/resources/chat/completions';
 import { Stream as Stream$1 } from 'openai/streaming.mjs';
@@ -141,6 +142,12 @@ interface ClientOptions {
     baseURL?: string;
     openaiApiKey?: string;
     anthropicApiKey?: string;
+    bedrock?: {
+        awsAccessKey?: string;
+        awsSecretKey?: string;
+        awsRegion?: string;
+        awsSessionToken?: string;
+    };
 }
 interface CreateDatasetOptions {
     name: string;
@@ -366,6 +373,15 @@ declare class AnthropicClient {
     createMessageStream(prompt: PromptWithContent, variables?: Record<string, string>): Promise<Stream<RawMessageStreamEvent>>;
 }
 
+declare class AnthropicBedrockClient {
+    private readonly client;
+    private anthropic?;
+    constructor(client: Hamming);
+    load(): Promise<AnthropicBedrock>;
+    createMessage(prompt: PromptWithContent, variables?: Record<string, string>): Promise<Message>;
+    createMessageStream(prompt: PromptWithContent, variables?: Record<string, string>): Promise<Stream<RawMessageStreamEvent>>;
+}
+
 declare class Datasets {
     private client;
     constructor(client: Hamming);
@@ -443,6 +459,12 @@ declare class Tracing extends TracerBase implements ITracing {
 declare class Hamming extends HttpClient {
     openaiApiKey?: string;
     anthropicApiKey?: string;
+    bedrock?: {
+        awsSecretKey?: string;
+        awsAccessKey?: string;
+        awsRegion?: string;
+        awsSessionToken?: string;
+    };
     constructor(config: ClientOptions);
     experiments: Experiments;
     datasets: Datasets;
@@ -451,6 +473,7 @@ declare class Hamming extends HttpClient {
     prompts: Prompts;
     openai: OpenAIClient;
     anthropic: AnthropicClient;
+    anthropicBedrock: AnthropicBedrockClient;
     _logger: Logger;
 }
 
