@@ -95,6 +95,12 @@ export interface ClientOptions {
   baseURL?: string;
   openaiApiKey?: string;
   anthropicApiKey?: string;
+  bedrock?: {
+    awsAccessKey?: string;
+    awsSecretKey?: string;
+    awsRegion?: string;
+    awsSessionToken?: string;
+  };
 }
 
 export interface CreateDatasetOptions {

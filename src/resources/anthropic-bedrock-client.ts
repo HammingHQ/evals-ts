@@ -1,4 +1,4 @@
-import type { Anthropic } from "@anthropic-ai/sdk";
+import type { AnthropicBedrock } from "@anthropic-ai/bedrock-sdk";
 import type {
   Message,
   RawMessageStreamEvent,
@@ -9,21 +9,27 @@ import { PromptTemplate } from "../prompt-template";
 import { PromptWithContent } from "../types";
 import { createMessageParams } from "./anthropic";
 
-class AnthropicClient {
-  private anthropic?: Anthropic;
+class AnthropicBedrockClient {
+  private anthropic?: AnthropicBedrock;
 
   constructor(private readonly client: Hamming) {}
 
-  async load(): Promise<Anthropic> {
+  async load(): Promise<AnthropicBedrock> {
     if (this.anthropic) {
       return this.anthropic;
     }
-    if (!this.client.anthropicApiKey) {
-      throw new Error("Anthropic API key is not set");
+    if (!this.client.bedrock) {
+      // We're relying on ~/.aws/credentials or AWS_SECRET_ACCESS_KEY and AWS_ACCESS_KEY_ID env vars
+      console.log(
+        "Anthropic Bedrock config is not set. Using environment credentials.",
+      );
     }
-    const module = await import("@anthropic-ai/sdk");
-    this.anthropic = new module.Anthropic({
-      apiKey: this.client.anthropicApiKey,
+    const module = await import("@anthropic-ai/bedrock-sdk");
+    this.anthropic = new module.AnthropicBedrock({
+      awsSecretKey: this.client.bedrock?.awsSecretKey,
+      awsAccessKey: this.client.bedrock?.awsAccessKey,
+      awsRegion: this.client.bedrock?.awsRegion,
+      awsSessionToken: this.client.bedrock?.awsSessionToken,
     });
     return this.anthropic;
   }
@@ -67,4 +73,4 @@ class AnthropicClient {
   }
 }
 
-export default AnthropicClient;
+export default AnthropicBedrockClient;
