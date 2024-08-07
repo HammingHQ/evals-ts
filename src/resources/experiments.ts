@@ -81,6 +81,7 @@ class ExperimentItems {
     itemContext: ExperimentItemContext,
     output: OutputType,
     scores: Record<string, Score> = {},
+    failed: boolean = false,
   ) {
     const { item, startTs } = itemContext;
     const durationMs = Date.now() - startTs;
@@ -97,6 +98,7 @@ class ExperimentItems {
           metrics: {
             durationMs,
           },
+          failed,
         }),
       },
     );
@@ -152,16 +154,26 @@ export class Experiments {
               datasetItem,
               sampleId,
             );
-            const output = await asyncRunContext.run(
-              newRunContext(itemCtx.item.id),
-              async () => run(datasetItem.input),
-            );
-            const scores = await scoringHelper.score(
-              datasetItem.input,
-              datasetItem.output,
-              output,
-            );
-            await this.items.end(itemCtx, output, scores);
+            try {
+              const output = await asyncRunContext.run(
+                newRunContext(itemCtx.item.id),
+                async () => run(datasetItem.input),
+              );
+              if (!output || typeof output !== "object") {
+                throw new Error(`Invalid output: ${output}`);
+              }
+              const scores = await scoringHelper.score(
+                datasetItem.input,
+                datasetItem.output,
+                output,
+              );
+              await this.items.end(itemCtx, output, scores);
+            } catch (err) {
+              console.error(err);
+              const msg = err instanceof Error ? err.message : "Unknown error";
+              const output = { error: msg };
+              await this.items.end(itemCtx, output, {}, true);
+            }
           };
           const workerCount =
             typeof opts.parallel === "number" ? opts.parallel : undefined;
@@ -173,16 +185,26 @@ export class Experiments {
               datasetItem,
               sampleId,
             );
-            const output = await asyncRunContext.run(
-              newRunContext(itemCtx.item.id),
-              async () => await run(datasetItem.input),
-            );
-            const scores = await scoringHelper.score(
-              datasetItem.input,
-              datasetItem.output,
-              output,
-            );
-            await this.items.end(itemCtx, output, scores);
+            try {
+              const output = await asyncRunContext.run(
+                newRunContext(itemCtx.item.id),
+                async () => await run(datasetItem.input),
+              );
+              if (!output || typeof output !== "object") {
+                throw new Error(`Invalid output: ${output}`);
+              }
+              const scores = await scoringHelper.score(
+                datasetItem.input,
+                datasetItem.output,
+                output,
+              );
+              await this.items.end(itemCtx, output, scores);
+            } catch (err) {
+              console.error(err);
+              const msg = err instanceof Error ? err.message : "Unknown error";
+              const output = { error: msg };
+              await this.items.end(itemCtx, output, {}, true);
+            }
           }
         }
       }
