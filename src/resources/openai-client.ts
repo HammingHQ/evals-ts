@@ -6,7 +6,7 @@ import type {
   ChatCompletionToolChoiceOption,
 } from "openai/resources/chat/completions";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
-import type { Stream } from "openai/streaming.mjs";
+import { Stream } from "openai/streaming.mjs";
 
 import { Hamming } from "../client";
 import { PromptTemplate } from "../prompt-template";
@@ -45,15 +45,21 @@ export class OpenAIClient {
     if (!prompt.content) {
       throw new Error("Prompt content not set");
     }
+
     const template = new PromptTemplate(prompt.content);
     const content = template.compile(variables || {});
 
     const client = await this.load();
     const params = createChatCompletionParams(content);
-    return await client.chat.completions.create({
+
+    const completion = await client.chat.completions.create({
       ...params,
       stream: false,
     });
+
+    await this._log(content, completion, params, variables, prompt.slug, false);
+
+    return completion;
   }
 
   async createChatCompletionStream(
@@ -68,10 +74,65 @@ export class OpenAIClient {
 
     const client = await this.load();
     const params = createChatCompletionParams(content);
-    return await client.chat.completions.create({
+
+    const original = await client.chat.completions.create({
       ...params,
       stream: true,
     });
+
+    const stream = new Stream<ChatCompletionChunk>(async function* () {
+      const chunks: ChatCompletionChunk[] = [];
+
+      try {
+        for await (const chunk of original) {
+          chunks.push(chunk);
+
+          yield chunk;
+        }
+      } finally {
+        await this._log(content, chunks, params, variables, prompt.slug, true);
+      }
+    }, original.controller);
+
+    return stream;
+  }
+
+  private async _log(
+    content: PromptContent,
+    outputOrChunks: ChatCompletion | ChatCompletionChunk[],
+    params: ChatCompletionCreateParamsBase,
+    variables: Record<string, string> | undefined,
+    promptSlug: string,
+    stream: boolean,
+  ) {
+    const item = await this.client.monitoring.startItem();
+
+    item.setInput(content);
+    item.setOutput(outputOrChunks);
+
+    item.setMetadata({
+      sdk: true,
+      prompt_slug: promptSlug,
+      variables,
+    });
+
+    item.tracing.logGeneration({
+      input: JSON.stringify(content.chatMessages),
+      output: JSON.stringify(outputOrChunks),
+      metadata: {
+        model: params.model,
+        stream: stream,
+        temperature: params.temperature || undefined,
+        max_tokens: params.max_tokens || undefined,
+        n: params.n || undefined,
+        seed: params.seed || undefined,
+        usage: Array.isArray(outputOrChunks)
+          ? outputOrChunks[outputOrChunks.length - 1]?.usage
+          : outputOrChunks.usage,
+      },
+    });
+
+    item.end();
   }
 }
 
