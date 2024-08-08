@@ -6,7 +6,7 @@ import type {
   ChatCompletionToolChoiceOption,
 } from "openai/resources/chat/completions";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
-import type { Stream } from "openai/streaming.mjs";
+import { Stream } from "openai/streaming.mjs";
 
 import { Hamming } from "../client";
 import { PromptTemplate } from "../prompt-template";
@@ -57,7 +57,7 @@ export class OpenAIClient {
       stream: false,
     });
 
-    await this._log(content, completion, params, prompt.slug);
+    await this._log(content, completion, params, variables, prompt.slug, false);
 
     return completion;
   }
@@ -75,49 +75,60 @@ export class OpenAIClient {
     const client = await this.load();
     const params = createChatCompletionParams(content);
 
-    return await client.chat.completions.create({
+    const original = await client.chat.completions.create({
       ...params,
       stream: true,
     });
+
+    const stream = new Stream<ChatCompletionChunk>(async function* () {
+      const chunks: ChatCompletionChunk[] = [];
+
+      try {
+        for await (const chunk of original) {
+          chunks.push(chunk);
+
+          yield chunk;
+        }
+      } finally {
+        await this._log(content, chunks, params, variables, prompt.slug, true);
+      }
+    }, original.controller);
+
+    return stream;
   }
 
   private async _log(
     content: PromptContent,
-    completion: ChatCompletion,
+    outputOrChunks: ChatCompletion | ChatCompletionChunk[],
     params: ChatCompletionCreateParamsBase,
-    slug: string,
+    variables: Record<string, string> | undefined,
+    promptSlug: string,
+    stream: boolean,
   ) {
     const item = await this.client.monitoring.startItem();
 
     item.setInput(content);
-    item.setOutput(completion);
+    item.setOutput(outputOrChunks);
 
     item.setMetadata({
       sdk: true,
-      prompt_slug: slug,
-      top_p: params.top_p,
-      model: params.model,
-      temperature: params.temperature,
-      max_tokens: params.max_tokens,
-      frequency_penalty: params.frequency_penalty,
-      presence_penalty: params.presence_penalty,
-      tool_choice: params.tool_choice,
-      prompt_tokens_usage: completion.usage?.prompt_tokens,
-      completion_tokens_usage: completion.usage?.completion_tokens,
-      total_tokens_usage: completion.usage?.total_tokens,
+      prompt_slug: promptSlug,
+      variables,
     });
 
     item.tracing.logGeneration({
       input: JSON.stringify(content.chatMessages),
-      output: JSON.stringify(completion),
+      output: JSON.stringify(outputOrChunks),
       metadata: {
-        provider: "openai",
         model: params.model,
+        stream: stream,
         temperature: params.temperature || undefined,
         max_tokens: params.max_tokens || undefined,
         n: params.n || undefined,
         seed: params.seed || undefined,
-        usage: completion.usage,
+        usage: Array.isArray(outputOrChunks)
+          ? outputOrChunks[outputOrChunks.length - 1]?.usage
+          : outputOrChunks.usage,
       },
     });
 
