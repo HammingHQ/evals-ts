@@ -80,19 +80,29 @@ export class OpenAIClient {
       stream: true,
     });
 
-    const stream = new Stream<ChatCompletionChunk>(async function* () {
-      const chunks: ChatCompletionChunk[] = [];
+    const stream = new Stream<ChatCompletionChunk>(
+      async function* () {
+        const chunks: ChatCompletionChunk[] = [];
 
-      try {
-        for await (const chunk of original) {
-          chunks.push(chunk);
+        try {
+          for await (const chunk of original) {
+            chunks.push(chunk);
 
-          yield chunk;
+            yield chunk;
+          }
+        } finally {
+          await this._log(
+            content,
+            chunks,
+            params,
+            variables,
+            prompt.slug,
+            true,
+          );
         }
-      } finally {
-        await this._log(content, chunks, params, variables, prompt.slug, true);
-      }
-    }, original.controller);
+      }.bind(this),
+      original.controller,
+    );
 
     return stream;
   }
