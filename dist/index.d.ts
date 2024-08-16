@@ -156,26 +156,27 @@ interface CreateDatasetOptions {
 }
 type TraceEvent = Record<string, unknown>;
 type LLMProvider = "openai" | "anthropic" | "azure_openai";
+interface GenerationMetadata {
+    provider?: LLMProvider;
+    model?: string;
+    stream?: boolean;
+    max_tokens?: number;
+    n?: number;
+    seed?: number;
+    temperature?: number;
+    usage?: {
+        completion_tokens?: number;
+        prompt_tokens?: number;
+        total_tokens?: number;
+    };
+    duration_ms?: number;
+    error?: boolean;
+    error_message?: string;
+}
 interface GenerationParams {
     input?: string;
     output?: string;
-    metadata?: {
-        provider?: LLMProvider;
-        model?: string;
-        stream?: boolean;
-        max_tokens?: number;
-        n?: number;
-        seed?: number;
-        temperature?: number;
-        usage?: {
-            completion_tokens?: number;
-            prompt_tokens?: number;
-            total_tokens?: number;
-        };
-        duration_ms?: number;
-        error?: boolean;
-        error_message?: string;
-    };
+    metadata?: GenerationMetadata;
 }
 interface Document {
     pageContent: string;
@@ -485,4 +486,4 @@ declare class PromptTemplate {
     compile(values: Record<string, string>): PromptContent;
 }
 
-export { type ChatMessage, type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationParams, Hamming, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringStartOpts, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type Prompt, type PromptContent, type PromptSettings, PromptTemplate, type PromptWithContent, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreParserType, ScoreType, ScorerExecutionType, ScoringErrorPrefix, ScoringErrorValue, type ScoringFunction, SessionEnvironment, type ToolChoice, type Trace, type TraceEvent, TracingMode };
+export { type ChatMessage, type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationMetadata, type GenerationParams, Hamming, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringStartOpts, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type Prompt, type PromptContent, type PromptSettings, PromptTemplate, type PromptWithContent, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreParserType, ScoreType, ScorerExecutionType, ScoringErrorPrefix, ScoringErrorValue, type ScoringFunction, SessionEnvironment, type ToolChoice, type Trace, type TraceEvent, TracingMode };
