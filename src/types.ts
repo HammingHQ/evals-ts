@@ -113,26 +113,28 @@ export type TraceEvent = Record<string, unknown>;
 
 export type LLMProvider = "openai" | "anthropic" | "azure_openai";
 
+export interface GenerationMetadata {
+  provider?: LLMProvider;
+  model?: string;
+  stream?: boolean;
+  max_tokens?: number;
+  n?: number;
+  seed?: number;
+  temperature?: number;
+  usage?: {
+    completion_tokens?: number;
+    prompt_tokens?: number;
+    total_tokens?: number;
+  };
+  duration_ms?: number;
+  error?: boolean;
+  error_message?: string;
+}
+
 export interface GenerationParams {
   input?: string;
   output?: string;
-  metadata?: {
-    provider?: LLMProvider;
-    model?: string;
-    stream?: boolean;
-    max_tokens?: number;
-    n?: number;
-    seed?: number;
-    temperature?: number;
-    usage?: {
-      completion_tokens?: number;
-      prompt_tokens?: number;
-      total_tokens?: number;
-    };
-    duration_ms?: number;
-    error?: boolean;
-    error_message?: string;
-  };
+  metadata?: GenerationMetadata;
 }
 
 export interface Document {

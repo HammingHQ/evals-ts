@@ -12,6 +12,7 @@ import { Hamming } from "../client";
 import { PromptTemplate } from "../prompt-template";
 import {
   ChatMessage,
+  GenerationMetadata,
   PromptContent,
   PromptWithContent,
   ToolChoice,
@@ -52,14 +53,54 @@ export class OpenAIClient {
     const client = await this.load();
     const params = createChatCompletionParams(content);
 
-    const completion = await client.chat.completions.create({
-      ...params,
-      stream: false,
+    const completion = await this.client.monitoring.runItem(async (item) => {
+      item.setInput(params);
+      item.setMetadata({
+        sdk: {
+          type: "openai_prompt",
+          stream: false,
+          prompt: {
+            slug: prompt.slug,
+          },
+          variables,
+        },
+      });
+      const meta: GenerationMetadata = {
+        model: params.model,
+        stream: false,
+        temperature: params.temperature ?? undefined,
+        max_tokens: params.max_tokens ?? undefined,
+        n: params.n ?? undefined,
+        seed: params.seed ?? undefined,
+      };
+      try {
+        const completion = await client.chat.completions.create({
+          ...params,
+          stream: false,
+        });
+        item.tracing.logGeneration({
+          input: JSON.stringify(params),
+          output: JSON.stringify(completion),
+          metadata: {
+            ...meta,
+            usage: completion.usage,
+          },
+        });
+        item.setOutput(completion);
+        return completion;
+      } catch (e) {
+        item.tracing.logGeneration({
+          input: JSON.stringify(params),
+          metadata: {
+            ...meta,
+            error: true,
+            error_message: (e as Error).message,
+          },
+        });
+        throw e;
+      }
     });
-
-    await this._log(content, completion, params, variables, prompt.slug, false);
-
-    return completion;
+    return completion as ChatCompletion;
   }
 
   async createChatCompletionStream(
@@ -75,74 +116,65 @@ export class OpenAIClient {
     const client = await this.load();
     const params = createChatCompletionParams(content);
 
-    const original = await client.chat.completions.create({
-      ...params,
-      stream: true,
-    });
-
-    const stream = new Stream<ChatCompletionChunk>(
-      async function* () {
-        const chunks: ChatCompletionChunk[] = [];
-
-        try {
-          for await (const chunk of original) {
-            chunks.push(chunk);
-
-            yield chunk;
-          }
-        } finally {
-          await this._log(
-            content,
-            chunks,
-            params,
-            variables,
-            prompt.slug,
-            true,
-          );
-        }
-      }.bind(this),
-      original.controller,
-    );
-
-    return stream;
-  }
-
-  private async _log(
-    content: PromptContent,
-    outputOrChunks: ChatCompletion | ChatCompletionChunk[],
-    params: ChatCompletionCreateParamsBase,
-    variables: Record<string, string> | undefined,
-    promptSlug: string,
-    stream: boolean,
-  ) {
     const item = await this.client.monitoring.startItem();
-
-    item.setInput(content);
-    item.setOutput(outputOrChunks);
-
+    item.setInput(params);
     item.setMetadata({
-      sdk: true,
-      prompt_slug: promptSlug,
-      variables,
-    });
-
-    item.tracing.logGeneration({
-      input: JSON.stringify(content.chatMessages),
-      output: JSON.stringify(outputOrChunks),
-      metadata: {
-        model: params.model,
-        stream: stream,
-        temperature: params.temperature || undefined,
-        max_tokens: params.max_tokens || undefined,
-        n: params.n || undefined,
-        seed: params.seed || undefined,
-        usage: Array.isArray(outputOrChunks)
-          ? outputOrChunks[outputOrChunks.length - 1]?.usage
-          : outputOrChunks.usage,
+      sdk: {
+        type: "openai_prompt",
+        stream: true,
+        prompt: {
+          slug: prompt.slug,
+        },
+        variables,
       },
     });
 
-    item.end();
+    const meta: GenerationMetadata = {
+      model: params.model,
+      stream: true,
+      temperature: params.temperature ?? undefined,
+      max_tokens: params.max_tokens ?? undefined,
+      n: params.n ?? undefined,
+      seed: params.seed ?? undefined,
+    };
+
+    try {
+      const original = await client.chat.completions.create({
+        ...params,
+        stream: true,
+      });
+      const stream = new Stream<ChatCompletionChunk>(async function* () {
+        const chunks: ChatCompletionChunk[] = [];
+        for await (const chunk of original) {
+          chunks.push(chunk);
+          yield chunk;
+        }
+        const lastChunk = chunks.length > 0 ? chunks[chunks.length - 1] : null;
+        item.tracing.logGeneration({
+          input: JSON.stringify(params),
+          output: JSON.stringify({ chunks }),
+          metadata: {
+            ...meta,
+            usage: lastChunk?.usage,
+          },
+        });
+        item.setOutput({ chunks });
+        item.end();
+      }, original.controller);
+      return stream;
+    } catch (e) {
+      item.tracing.logGeneration({
+        input: JSON.stringify(params),
+        metadata: {
+          ...meta,
+          error: true,
+          error_message: (e as Error).message,
+        },
+      });
+      item.end(true, (e as Error).message);
+      throw e;
+    } finally {
+    }
   }
 }
 
