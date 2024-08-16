@@ -6,12 +6,13 @@ import type {
   ChatCompletionToolChoiceOption,
 } from "openai/resources/chat/completions";
 import type { ChatCompletionMessageParam } from "openai/resources/index.mjs";
-import type { Stream } from "openai/streaming.mjs";
+import { Stream } from "openai/streaming.mjs";
 
 import { Hamming } from "../client";
 import { PromptTemplate } from "../prompt-template";
 import {
   ChatMessage,
+  GenerationMetadata,
   PromptContent,
   PromptWithContent,
   ToolChoice,
@@ -45,15 +46,61 @@ export class OpenAIClient {
     if (!prompt.content) {
       throw new Error("Prompt content not set");
     }
+
     const template = new PromptTemplate(prompt.content);
     const content = template.compile(variables || {});
 
     const client = await this.load();
     const params = createChatCompletionParams(content);
-    return await client.chat.completions.create({
-      ...params,
-      stream: false,
+
+    const completion = await this.client.monitoring.runItem(async (item) => {
+      item.setInput(params);
+      item.setMetadata({
+        sdk: {
+          type: "openai_prompt",
+          stream: false,
+          prompt: {
+            slug: prompt.slug,
+          },
+          variables,
+        },
+      });
+      const meta: GenerationMetadata = {
+        model: params.model,
+        stream: false,
+        temperature: params.temperature ?? undefined,
+        max_tokens: params.max_tokens ?? undefined,
+        n: params.n ?? undefined,
+        seed: params.seed ?? undefined,
+      };
+      try {
+        const completion = await client.chat.completions.create({
+          ...params,
+          stream: false,
+        });
+        item.tracing.logGeneration({
+          input: JSON.stringify(params),
+          output: JSON.stringify(completion),
+          metadata: {
+            ...meta,
+            usage: completion.usage,
+          },
+        });
+        item.setOutput(completion);
+        return completion;
+      } catch (e) {
+        item.tracing.logGeneration({
+          input: JSON.stringify(params),
+          metadata: {
+            ...meta,
+            error: true,
+            error_message: (e as Error).message,
+          },
+        });
+        throw e;
+      }
     });
+    return completion as ChatCompletion;
   }
 
   async createChatCompletionStream(
@@ -68,10 +115,66 @@ export class OpenAIClient {
 
     const client = await this.load();
     const params = createChatCompletionParams(content);
-    return await client.chat.completions.create({
-      ...params,
-      stream: true,
+
+    const item = await this.client.monitoring.startItem();
+    item.setInput(params);
+    item.setMetadata({
+      sdk: {
+        type: "openai_prompt",
+        stream: true,
+        prompt: {
+          slug: prompt.slug,
+        },
+        variables,
+      },
     });
+
+    const meta: GenerationMetadata = {
+      model: params.model,
+      stream: true,
+      temperature: params.temperature ?? undefined,
+      max_tokens: params.max_tokens ?? undefined,
+      n: params.n ?? undefined,
+      seed: params.seed ?? undefined,
+    };
+
+    try {
+      const original = await client.chat.completions.create({
+        ...params,
+        stream: true,
+      });
+      const stream = new Stream<ChatCompletionChunk>(async function* () {
+        const chunks: ChatCompletionChunk[] = [];
+        for await (const chunk of original) {
+          chunks.push(chunk);
+          yield chunk;
+        }
+        const lastChunk = chunks.length > 0 ? chunks[chunks.length - 1] : null;
+        item.tracing.logGeneration({
+          input: JSON.stringify(params),
+          output: JSON.stringify({ chunks }),
+          metadata: {
+            ...meta,
+            usage: lastChunk?.usage,
+          },
+        });
+        item.setOutput({ chunks });
+        item.end();
+      }, original.controller);
+      return stream;
+    } catch (e) {
+      item.tracing.logGeneration({
+        input: JSON.stringify(params),
+        metadata: {
+          ...meta,
+          error: true,
+          error_message: (e as Error).message,
+        },
+      });
+      item.end(true, (e as Error).message);
+      throw e;
+    } finally {
+    }
   }
 }
 
