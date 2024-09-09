@@ -361,10 +361,13 @@ function getExecutionConfig(scoringFunc: ScoringFunction): Record<string, any> {
   if (scoringFunc.scorer.type === ScorerExecutionType.Remote) {
     const { prompt, variableMappings, scoreParser } = scoringFunc.scorer;
     return {
+      kind: "remote",
       prompt,
       variableMappings,
       scoreParser,
     };
   }
-  return {};
+  return {
+    kind: "local",
+  };
 }
