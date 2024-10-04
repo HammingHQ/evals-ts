@@ -1,10 +1,22 @@
+import { LRUCache } from "lru-cache";
+
 import type {
+  CallEvent,
   Hamming,
   MonitoringStartOpts,
   RunContext,
   TraceEvent,
 } from "../index";
 
+import {
+  CallProvider,
+  EventKind,
+  MonitoringItemType,
+  RetellCallEvent,
+  RetellCallEventType,
+} from "../types";
+
+import { asyncRunContext } from "../asyncStorage";
 import {
   MonitoringItem as IMonitoringItem,
   ITracing,
@@ -13,11 +25,11 @@ import {
   MonitoringItemStatus,
   MonitoringSession,
   MonitoringTrace,
+  MonitoringTraceContext,
   OutputType,
   TracingMode,
-  MonitoringTraceContext,
 } from "../types";
-import { asyncRunContext } from "../asyncStorage";
+import { parseRetellCallId } from "../utils/voice";
 import { TracerBase } from "./tracing";
 
 enum MonitoringState {
@@ -68,10 +80,16 @@ class MonitoringItem implements IMonitoringItem {
   status: MonitoringItemStatus;
   errorMessage: string | undefined;
   startTs: number;
-
+  itemType: MonitoringItemType;
   tracing: ITracing;
 
-  constructor(client: Hamming, sessionId: string, seqId: number) {
+  constructor(
+    client: Hamming,
+    sessionId: string,
+    seqId: number,
+    itemType: MonitoringItemType,
+  ) {
+    this.itemType = itemType;
     this.client = client;
     this.sessionId = sessionId;
     this.seqId = seqId;
@@ -124,7 +142,10 @@ class MonitoringItem implements IMonitoringItem {
       seq_id: this.seqId,
       parent_seq_id: undefined,
       event: {
-        kind: "root",
+        kind:
+          this.itemType === MonitoringItemType.CALL
+            ? EventKind.Call
+            : EventKind.Root,
         input: this.input,
         output: this.output,
         metadata: this.metadata,
@@ -141,6 +162,7 @@ export class Monitoring {
   private state: MonitoringState = MonitoringState.STOPPED;
   private session: MonitoringSession | null;
   private monitoringStartOpts: MonitoringStartOpts | undefined;
+  private callEvents: LRUCache<string, IMonitoringItem>;
 
   constructor(client: Hamming) {
     this.client = client;
@@ -152,6 +174,10 @@ export class Monitoring {
     this.client._logger.start();
     this.client.tracing._setMode(TracingMode.MONITORING);
     this.state = MonitoringState.STARTED;
+    this.callEvents = new LRUCache<string, IMonitoringItem>({
+      max: 1000,
+      ttl: 1000 * 60 * 60 * 2, // 2 hours
+    });
     console.log("Monitoring started!");
   }
 
@@ -160,6 +186,7 @@ export class Monitoring {
     this.client.tracing._setMode(TracingMode.OFF);
     this.client._logger.stop();
     this.state = MonitoringState.STOPPED;
+    this.callEvents.clear();
     console.log("Monitoring stopped!");
   }
 
@@ -169,7 +196,12 @@ export class Monitoring {
     await this._createSessionIfNotExist();
     const [sessionId, seqId] = this._nextSeqId();
 
-    const item = new MonitoringItem(this.client, sessionId, seqId);
+    const item = new MonitoringItem(
+      this.client,
+      sessionId,
+      seqId,
+      MonitoringItemType.TEXT,
+    );
     item._start();
 
     try {
@@ -197,13 +229,21 @@ export class Monitoring {
     }
   }
 
-  async startItem(): Promise<IMonitoringItem> {
+  async _startItem(itemType: MonitoringItemType): Promise<IMonitoringItem> {
     await this._createSessionIfNotExist();
     const [sessionId, seqId] = this._nextSeqId();
 
-    const item = new MonitoringItem(this.client, sessionId, seqId);
+    const item = new MonitoringItem(this.client, sessionId, seqId, itemType);
     item._start();
     return item;
+  }
+
+  async startItem(): Promise<IMonitoringItem> {
+    return this._startItem(MonitoringItemType.TEXT);
+  }
+
+  async _startCall(): Promise<IMonitoringItem> {
+    return this._startItem(MonitoringItemType.CALL);
   }
 
   _endItem(trace: MonitoringTrace) {
@@ -227,6 +267,74 @@ export class Monitoring {
       seq_id: seqId,
       parent_seq_id: parentSeqId,
     };
+  }
+
+  async callEvent(
+    provider: CallProvider,
+    event: CallEvent,
+    metadata?: MetadataType,
+  ) {
+    switch (provider) {
+      case CallProvider.Custom:
+        throw Error("Custom call provider not implemented!");
+      case CallProvider.Retell:
+        await this.handleRetellCallEvent(event as RetellCallEvent, metadata);
+        break;
+      default:
+        throw Error(`Unsupported call provider: ${provider}`);
+    }
+  }
+
+  async handleRetellCallEvent(
+    evt: RetellCallEvent,
+    metadata: MetadataType = {},
+  ) {
+    const callId = parseRetellCallId(evt);
+    if (!callId) {
+      throw Error("call_id is missing");
+    }
+    let monitoringItem: IMonitoringItem | undefined;
+    if (evt.event === RetellCallEventType.Started) {
+      monitoringItem = await this._startCall();
+      monitoringItem.tracing.log({
+        kind: EventKind.CallEvent,
+        event: evt,
+      });
+      this.callEvents.set(callId, monitoringItem);
+    } else if (evt.event === RetellCallEventType.Ended) {
+      monitoringItem = this.callEvents.get(callId);
+      if (!monitoringItem) {
+        console.warn(`Missing call_started event for id: ${callId}`);
+        monitoringItem = await this._startCall();
+        this.callEvents.set(callId, monitoringItem);
+      }
+      monitoringItem.tracing.log({
+        kind: EventKind.CallEvent,
+        event: evt,
+      });
+      monitoringItem.setInput({
+        provider: CallProvider.Retell,
+      });
+      monitoringItem.setMetadata(metadata);
+      monitoringItem.setOutput(evt.call);
+      monitoringItem.end();
+    } else if (evt.event === RetellCallEventType.Analyzed) {
+      monitoringItem = this.callEvents.get(callId);
+      if (!monitoringItem) {
+        console.warn(`Missing call_started event for id: ${callId}`);
+        monitoringItem = await this._startCall();
+        monitoringItem.tracing.log({
+          kind: EventKind.CallEvent,
+          event: evt,
+        });
+        monitoringItem.end();
+      } else {
+        monitoringItem.tracing.log({
+          kind: EventKind.CallEvent,
+          event: evt,
+        });
+      }
+    }
   }
 
   private _nextSeqId(): [string, number] {

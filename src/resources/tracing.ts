@@ -2,6 +2,7 @@ import { asyncRunContext } from "../asyncStorage";
 import type { Hamming } from "../client";
 import {
   Document,
+  EventKind,
   GenerationParams,
   ITracing,
   LogMessageType,
@@ -109,7 +110,7 @@ export class Tracing extends TracerBase implements ITracing {
     const rootTrace: Trace = {
       id: this.nextTraceId(),
       experimentItemId,
-      event: { kind: "root" },
+      event: { kind: EventKind.Root },
     };
 
     const traces: Trace[] = [rootTrace];
