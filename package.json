@@ -49,6 +49,7 @@
   "dependencies": {
     "@anthropic-ai/bedrock-sdk": "^0.10.2",
     "@anthropic-ai/sdk": "^0.24.3",
+    "lru-cache": "^11.0.1",
     "openai": "^4.53.0"
   }
 }

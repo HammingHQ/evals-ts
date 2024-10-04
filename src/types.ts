@@ -179,6 +179,11 @@ export interface MonitoringItem {
   tracing: ITracing;
 }
 
+export enum MonitoringItemType {
+  CALL = "CALL",
+  TEXT = "TEXT",
+}
+
 export enum MonitoringItemStatus {
   STARTED = "STARTED",
   COMPLETED = "COMPLETED",
@@ -346,3 +351,29 @@ export interface PromptContent {
 export interface PromptWithContent extends Prompt {
   content?: PromptContent;
 }
+
+export enum EventKind {
+  Root = "root",
+  Call = "call",
+  CallEvent = "call_event",
+}
+
+export enum CallProvider {
+  Custom = "custom",
+  Retell = "retell",
+}
+
+export enum RetellCallEventType {
+  Started = "call_started",
+  Ended = "call_ended",
+  Analyzed = "call_analyzed",
+}
+
+export interface RetellCallEvent {
+  event: RetellCallEventType;
+  call: Record<string, unknown>;
+}
+
+export type CustomCallEvent = Record<string, unknown>;
+
+export type CallEvent = CustomCallEvent | RetellCallEvent;
