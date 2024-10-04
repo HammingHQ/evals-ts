@@ -214,6 +214,10 @@ interface MonitoringItem {
     end(error?: boolean, errorMessage?: string): void;
     tracing: ITracing;
 }
+declare enum MonitoringItemType {
+    CALL = "CALL",
+    TEXT = "TEXT"
+}
 declare enum MonitoringItemStatus {
     STARTED = "STARTED",
     COMPLETED = "COMPLETED",
@@ -350,6 +354,26 @@ interface PromptContent {
 interface PromptWithContent extends Prompt {
     content?: PromptContent;
 }
+declare enum EventKind {
+    Root = "root",
+    Call = "call",
+    CallEvent = "call_event"
+}
+declare enum CallProvider {
+    Custom = "custom",
+    Retell = "retell"
+}
+declare enum RetellCallEventType {
+    Started = "call_started",
+    Ended = "call_ended",
+    Analyzed = "call_analyzed"
+}
+interface RetellCallEvent {
+    event: RetellCallEventType;
+    call: Record<string, unknown>;
+}
+type CustomCallEvent = Record<string, unknown>;
+type CallEvent = CustomCallEvent | RetellCallEvent;
 
 declare class Logger {
     private client;
@@ -408,13 +432,18 @@ declare class Monitoring {
     private state;
     private session;
     private monitoringStartOpts;
+    private callEvents;
     constructor(client: Hamming);
     start(opts?: MonitoringStartOpts): void;
     stop(): void;
     runItem(callback: (item: MonitoringItem) => unknown | Promise<unknown>): Promise<unknown>;
+    _startItem(itemType: MonitoringItemType): Promise<MonitoringItem>;
     startItem(): Promise<MonitoringItem>;
+    _startCall(): Promise<MonitoringItem>;
     _endItem(trace: MonitoringTrace): void;
     _getTraceContext(ctx?: RunContext): MonitoringTraceContext | null;
+    callEvent(provider: CallProvider, event: CallEvent, metadata?: MetadataType): Promise<void>;
+    handleRetellCallEvent(evt: RetellCallEvent, metadata?: MetadataType): Promise<void>;
     private _nextSeqId;
     private _createSessionIfNotExist;
 }
@@ -486,4 +515,4 @@ declare class PromptTemplate {
     compile(values: Record<string, string>): PromptContent;
 }
 
-export { type ChatMessage, type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationMetadata, type GenerationParams, Hamming, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, type MonitoringSession, type MonitoringStartOpts, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type Prompt, type PromptContent, type PromptSettings, PromptTemplate, type PromptWithContent, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreParserType, ScoreType, ScorerExecutionType, ScoringErrorPrefix, ScoringErrorValue, type ScoringFunction, SessionEnvironment, type ToolChoice, type Trace, type TraceEvent, TracingMode };
+export { type CallEvent, CallProvider, type ChatMessage, type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomCallEvent, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, EventKind, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationMetadata, type GenerationParams, Hamming, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, MonitoringItemType, type MonitoringSession, type MonitoringStartOpts, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type Prompt, type PromptContent, type PromptSettings, PromptTemplate, type PromptWithContent, type RetellCallEvent, RetellCallEventType, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreParserType, ScoreType, ScorerExecutionType, ScoringErrorPrefix, ScoringErrorValue, type ScoringFunction, SessionEnvironment, type ToolChoice, type Trace, type TraceEvent, TracingMode };
