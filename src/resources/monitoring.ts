@@ -6,6 +6,7 @@ import type {
   MonitoringStartOpts,
   RunContext,
   TraceEvent,
+  VapiCallEvent,
 } from "../index";
 
 import {
@@ -14,6 +15,7 @@ import {
   MonitoringItemType,
   RetellCallEvent,
   RetellCallEventType,
+  VapiCallEventType,
 } from "../types";
 
 import { asyncRunContext } from "../asyncStorage";
@@ -29,7 +31,7 @@ import {
   OutputType,
   TracingMode,
 } from "../types";
-import { parseRetellCallId } from "../utils/voice";
+import { parseRetellCallId, parseVapiCallId } from "../utils/voice";
 import { TracerBase } from "./tracing";
 
 enum MonitoringState {
@@ -280,6 +282,9 @@ export class Monitoring {
       case CallProvider.Retell:
         await this.handleRetellCallEvent(event as RetellCallEvent, metadata);
         break;
+      case CallProvider.Vapi:
+        await this.handleVapiCallEvent(event as VapiCallEvent, metadata);
+        break;
       default:
         throw Error(`Unsupported call provider: ${provider}`);
     }
@@ -334,6 +339,47 @@ export class Monitoring {
           event: evt,
         });
       }
+    }
+  }
+
+  async handleVapiCallEvent(evt: VapiCallEvent, metadata: MetadataType = {}) {
+    if (
+      evt.message.type !== VapiCallEventType.StatusUpdate &&
+      evt.message.type !== VapiCallEventType.EndOfCallReport
+    ) {
+      console.debug(`Unsupported Vapi call event type: ${evt.message.type}`);
+      return;
+    }
+    const callId = parseVapiCallId(evt);
+    if (!callId) {
+      throw Error("call ID is missing");
+    }
+    const createMonitoringItemIfNotExist = async () => {
+      let monitoringItem = this.callEvents.get(callId);
+      if (!monitoringItem) {
+        monitoringItem = await this._startCall();
+        this.callEvents.set(callId, monitoringItem);
+      }
+      return monitoringItem;
+    };
+    const monitoringItem = await createMonitoringItemIfNotExist();
+    switch (evt.message.type) {
+      case VapiCallEventType.StatusUpdate:
+        monitoringItem.tracing.log({
+          kind: EventKind.CallEvent,
+          event: evt,
+        });
+        break;
+      case VapiCallEventType.EndOfCallReport:
+        monitoringItem.setInput({
+          provider: CallProvider.Vapi,
+        });
+        monitoringItem.setMetadata(metadata);
+        monitoringItem.setOutput(evt.message);
+        monitoringItem.end();
+        break;
+      default:
+        throw Error(`Unsupported Vapi call event type: ${evt.message.type}`);
     }
   }
 
