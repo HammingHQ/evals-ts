@@ -361,6 +361,7 @@ export enum EventKind {
 export enum CallProvider {
   Custom = "custom",
   Retell = "retell",
+  Vapi = "vapi",
 }
 
 export enum RetellCallEventType {
@@ -374,6 +375,17 @@ export interface RetellCallEvent {
   call: Record<string, unknown>;
 }
 
+export enum VapiCallEventType {
+  StatusUpdate = "status-update",
+  EndOfCallReport = "end-of-call-report",
+}
+
+export interface VapiCallEvent {
+  message: {
+    type: VapiCallEventType;
+  } & Record<string, unknown>;
+}
+
 export type CustomCallEvent = Record<string, unknown>;
 
-export type CallEvent = CustomCallEvent | RetellCallEvent;
+export type CallEvent = CustomCallEvent | RetellCallEvent | VapiCallEvent;
