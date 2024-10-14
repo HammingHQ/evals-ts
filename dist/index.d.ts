@@ -361,7 +361,8 @@ declare enum EventKind {
 }
 declare enum CallProvider {
     Custom = "custom",
-    Retell = "retell"
+    Retell = "retell",
+    Vapi = "vapi"
 }
 declare enum RetellCallEventType {
     Started = "call_started",
@@ -372,8 +373,17 @@ interface RetellCallEvent {
     event: RetellCallEventType;
     call: Record<string, unknown>;
 }
+declare enum VapiCallEventType {
+    StatusUpdate = "status-update",
+    EndOfCallReport = "end-of-call-report"
+}
+interface VapiCallEvent {
+    message: {
+        type: VapiCallEventType;
+    } & Record<string, unknown>;
+}
 type CustomCallEvent = Record<string, unknown>;
-type CallEvent = CustomCallEvent | RetellCallEvent;
+type CallEvent = CustomCallEvent | RetellCallEvent | VapiCallEvent;
 
 declare class Logger {
     private client;
@@ -444,6 +454,7 @@ declare class Monitoring {
     _getTraceContext(ctx?: RunContext): MonitoringTraceContext | null;
     callEvent(provider: CallProvider, event: CallEvent, metadata?: MetadataType): Promise<void>;
     handleRetellCallEvent(evt: RetellCallEvent, metadata?: MetadataType): Promise<void>;
+    handleVapiCallEvent(evt: VapiCallEvent, metadata?: MetadataType): Promise<void>;
     private _nextSeqId;
     private _createSessionIfNotExist;
 }
@@ -515,4 +526,4 @@ declare class PromptTemplate {
     compile(values: Record<string, string>): PromptContent;
 }
 
-export { type CallEvent, CallProvider, type ChatMessage, type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomCallEvent, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, EventKind, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationMetadata, type GenerationParams, Hamming, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, MonitoringItemType, type MonitoringSession, type MonitoringStartOpts, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type Prompt, type PromptContent, type PromptSettings, PromptTemplate, type PromptWithContent, type RetellCallEvent, RetellCallEventType, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreParserType, ScoreType, ScorerExecutionType, ScoringErrorPrefix, ScoringErrorValue, type ScoringFunction, SessionEnvironment, type ToolChoice, type Trace, type TraceEvent, TracingMode };
+export { type CallEvent, CallProvider, type ChatMessage, type ClassificationScoreConfig, type ClientOptions, type CreateDatasetOptions, type CustomCallEvent, type CustomScoringConfig, type Dataset, type DatasetId, type DatasetItem, type DatasetItemValue, type DatasetWithItems, type Document, EventKind, type Experiment, type ExperimentItem, type ExperimentItemContext, type ExperimentItemMetrics, ExperimentStatus, FunctionType, type GenerationMetadata, type GenerationParams, Hamming, type ITracing, type InputType, type LLMClassifyScorer, type LLMProvider, LabelColor, type LocalScorer, type LogMessage, LogMessageType, type MetadataType, type MonitoringItem, MonitoringItemStatus, MonitoringItemType, type MonitoringSession, type MonitoringStartOpts, type MonitoringTrace, type MonitoringTraceContext, type NumericScoreConfig, type OutputType, type Prompt, type PromptContent, type PromptSettings, PromptTemplate, type PromptWithContent, type RetellCallEvent, RetellCallEventType, type RetrievalParams, type RunContext, type RunOptions, type Runner, type Score, type ScoreConfig, ScoreParserType, ScoreType, ScorerExecutionType, ScoringErrorPrefix, ScoringErrorValue, type ScoringFunction, SessionEnvironment, type ToolChoice, type Trace, type TraceEvent, TracingMode, type VapiCallEvent, VapiCallEventType };
