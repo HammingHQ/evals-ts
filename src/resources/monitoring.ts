@@ -347,7 +347,6 @@ export class Monitoring {
       evt.message.type !== VapiCallEventType.StatusUpdate &&
       evt.message.type !== VapiCallEventType.EndOfCallReport
     ) {
-      console.debug(`Unsupported Vapi call event type: ${evt.message.type}`);
       return;
     }
     const callId = parseVapiCallId(evt);
