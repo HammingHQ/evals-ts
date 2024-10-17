@@ -326,12 +326,16 @@ export class Monitoring {
     } else if (evt.event === RetellCallEventType.Analyzed) {
       monitoringItem = this.callEvents.get(callId);
       if (!monitoringItem) {
-        console.warn(`Missing call_started event for id: ${callId}`);
         monitoringItem = await this._startCall();
         monitoringItem.tracing.log({
           kind: EventKind.CallEvent,
           event: evt,
         });
+        monitoringItem.setInput({
+          provider: CallProvider.Retell,
+        });
+        monitoringItem.setMetadata(metadata);
+        monitoringItem.setOutput(evt.call);
         monitoringItem.end();
       } else {
         monitoringItem.tracing.log({
